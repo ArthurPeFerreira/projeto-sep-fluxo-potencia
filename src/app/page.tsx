@@ -1,9 +1,9 @@
-import PowerSystemDiagramB from "@/components/PowerSystemDiagram/PowerSystemDiagramB";
+import PowerSystemDiagramSelector from "@/components/PowerSystemDiagram/PowerSystemDiagramSelector";
 
 export default function Home() {
   return (
     <>
-      <PowerSystemDiagramB />
+      <PowerSystemDiagramSelector />
     </>
   );
 }
