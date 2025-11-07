@@ -239,6 +239,23 @@ export const PowerSystemDiagramA: React.FC<PowerSystemDiagramAProps> = ({
                   step={1}
                 />
               )}
+            />{" "}
+            <Form.Item
+              control={form.control}
+              name="angleVi"
+              render={({ field }) => (
+                <Input
+                  type="number"
+                  title="Ângulo Vi (graus)"
+                  value={field.value}
+                  onChange={(e: any) =>
+                    field.onChange(typeof e === "number" ? e : 0)
+                  }
+                  min={-180}
+                  max={180}
+                  step={1}
+                />
+              )}
             />
             <Form.Item
               control={form.control}
@@ -253,23 +270,6 @@ export const PowerSystemDiagramA: React.FC<PowerSystemDiagramAProps> = ({
                   }
                   min={0}
                   max={1000}
-                  step={1}
-                />
-              )}
-            />
-            <Form.Item
-              control={form.control}
-              name="angleVi"
-              render={({ field }) => (
-                <Input
-                  type="number"
-                  title="Ângulo Vi (graus)"
-                  value={field.value}
-                  onChange={(e: any) =>
-                    field.onChange(typeof e === "number" ? e : 0)
-                  }
-                  min={-180}
-                  max={180}
                   step={1}
                 />
               )}

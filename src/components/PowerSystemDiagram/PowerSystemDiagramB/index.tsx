@@ -6,18 +6,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { Switch } from "@/components/ui/Switch";
 import { Form } from "@/components/ui/Form";
 import { Modal } from "@/components/ui/Modal";
 import { LoadingIcon } from "@/components/ui/Icons/LoadingIcon";
 import GroundIcon from "../GroundIcon";
 import PhasorPair from "../PhasorPair";
 import { powerSystemSchemaB } from "./schema";
-import {
-  PowerSystemParamsB,
-  ImpedanceFormat,
-  PowerSystemDiagramBProps,
-} from "./types";
+import { PowerSystemParamsB, PowerSystemDiagramBProps } from "./types";
 import { getComplexFromRectangular, getComplexFromPolar } from "./utils";
 import {
   calculatePowerFlowB,
@@ -27,13 +22,14 @@ import {
 } from "./calculations";
 import { Table } from "@/components/ui/Table";
 import Decimal from "decimal.js";
+import { PI } from "@/lib/constants";
+import { useImpedanceFormat } from "../ImpedanceFormatContext";
 
 export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
   className = "",
   initialValues,
 }) => {
-  const [impedanceFormat, setImpedanceFormat] =
-    useState<ImpedanceFormat>("rectangular");
+  const { impedanceFormat } = useImpedanceFormat();
   const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [results, setResults] = useState<PowerFlowResultsB | null>(null);
@@ -50,58 +46,124 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
       angleVk: initialValues?.angleVk ?? 10,
       Vn: initialValues?.Vn ?? 345,
       L: initialValues?.L ?? 80,
-      zR: initialValues?.zR ?? 10,
-      zX: initialValues?.zX ?? 5,
+      zR_ik: initialValues?.zR_ik ?? 5,
+      zX_ik: initialValues?.zX_ik ?? 40,
+      zR_jk: initialValues?.zR_jk ?? 5,
+      zX_jk: initialValues?.zX_jk ?? 40,
+      zR_ij: initialValues?.zR_ij ?? 5,
+      zX_ij: initialValues?.zX_ij ?? 40,
     },
   });
 
   const params = form.watch();
 
-  const currentComplex = getComplexFromRectangular(params.zR, params.zX);
+  const complexIk = getComplexFromRectangular(params.zR_ik, params.zX_ik);
+  const complexJk = getComplexFromRectangular(params.zR_jk, params.zX_jk);
+  const complexIj = getComplexFromRectangular(params.zR_ij, params.zX_ij);
 
-  const [polarMagnitude, setPolarMagnitude] = useState<string>("");
-  const [polarAngle, setPolarAngle] = useState<string>("");
+  const [polarMagnitudeIk, setPolarMagnitudeIk] = useState<string>("");
+  const [polarAngleIk, setPolarAngleIk] = useState<string>("");
+  const [polarMagnitudeJk, setPolarMagnitudeJk] = useState<string>("");
+  const [polarAngleJk, setPolarAngleJk] = useState<string>("");
+  const [polarMagnitudeIj, setPolarMagnitudeIj] = useState<string>("");
+  const [polarAngleIj, setPolarAngleIj] = useState<string>("");
 
-  const polarMagnitudeValue = currentComplex.abs();
-  const polarAngleValue = (currentComplex.arg() * 180) / Math.PI;
+  const polarMagnitudeValueIk = new Decimal(complexIk.abs());
+  const polarAngleValueIk = new Decimal(complexIk.arg()).mul(180).div(PI);
+  const polarMagnitudeValueJk = new Decimal(complexJk.abs());
+  const polarAngleValueJk = new Decimal(complexJk.arg()).mul(180).div(PI);
+  const polarMagnitudeValueIj = new Decimal(complexIj.abs());
+  const polarAngleValueIj = new Decimal(complexIj.arg()).mul(180).div(PI);
 
   useEffect(() => {
     if (impedanceFormat === "polar") {
-      setPolarMagnitude(polarMagnitudeValue.toFixed(2));
-      setPolarAngle(polarAngleValue.toFixed(2));
+      setPolarMagnitudeIk(polarMagnitudeValueIk.toDecimalPlaces(2).toString());
+      setPolarAngleIk(polarAngleValueIk.toDecimalPlaces(2).toString());
+      setPolarMagnitudeJk(polarMagnitudeValueJk.toDecimalPlaces(2).toString());
+      setPolarAngleJk(polarAngleValueJk.toDecimalPlaces(2).toString());
+      setPolarMagnitudeIj(polarMagnitudeValueIj.toDecimalPlaces(2).toString());
+      setPolarAngleIj(polarAngleValueIj.toDecimalPlaces(2).toString());
     }
   }, [
-    params.zR,
-    params.zX,
+    params.zR_ik,
+    params.zX_ik,
+    params.zR_jk,
+    params.zX_jk,
+    params.zR_ij,
+    params.zX_ij,
     impedanceFormat,
-    polarMagnitudeValue,
-    polarAngleValue,
+    polarMagnitudeValueIk,
+    polarAngleValueIk,
+    polarMagnitudeValueJk,
+    polarAngleValueJk,
+    polarMagnitudeValueIj,
+    polarAngleValueIj,
   ]);
 
-  const handleImpedanceFormatChange = (format: ImpedanceFormat) => {
-    if (format === "polar") {
-      setPolarMagnitude(polarMagnitudeValue.toFixed(2));
-      setPolarAngle(polarAngleValue.toFixed(2));
-    }
-    setImpedanceFormat(format);
+  const handlePolarMagnitudeChangeIk = (value: string) => {
+    setPolarMagnitudeIk(value);
+    try {
+      const magnitude = new Decimal(value || "0");
+      const angle = new Decimal(polarAngleIk || "0");
+      const complex = getComplexFromPolar(magnitude, angle);
+      form.setValue("zR_ik", complex.re);
+      form.setValue("zX_ik", complex.im);
+    } catch (e) {}
   };
 
-  const handlePolarMagnitudeChange = (value: string) => {
-    setPolarMagnitude(value);
-    const magnitude = parseFloat(value) || 0;
-    const angle = parseFloat(polarAngle) || 0;
-    const complex = getComplexFromPolar(magnitude, angle);
-    form.setValue("zR", complex.re);
-    form.setValue("zX", complex.im);
+  const handlePolarAngleChangeIk = (value: string) => {
+    setPolarAngleIk(value);
+    try {
+      const magnitude = new Decimal(polarMagnitudeIk || "0");
+      const angle = new Decimal(value || "0");
+      const complex = getComplexFromPolar(magnitude, angle);
+      form.setValue("zR_ik", complex.re);
+      form.setValue("zX_ik", complex.im);
+    } catch (e) {}
   };
 
-  const handlePolarAngleChange = (value: string) => {
-    setPolarAngle(value);
-    const magnitude = parseFloat(polarMagnitude) || 0;
-    const angle = parseFloat(value) || 0;
-    const complex = getComplexFromPolar(magnitude, angle);
-    form.setValue("zR", complex.re);
-    form.setValue("zX", complex.im);
+  const handlePolarMagnitudeChangeJk = (value: string) => {
+    setPolarMagnitudeJk(value);
+    try {
+      const magnitude = new Decimal(value || "0");
+      const angle = new Decimal(polarAngleJk || "0");
+      const complex = getComplexFromPolar(magnitude, angle);
+      form.setValue("zR_jk", complex.re);
+      form.setValue("zX_jk", complex.im);
+    } catch (e) {}
+  };
+
+  const handlePolarAngleChangeJk = (value: string) => {
+    setPolarAngleJk(value);
+    try {
+      const magnitude = new Decimal(polarMagnitudeJk || "0");
+      const angle = new Decimal(value || "0");
+      const complex = getComplexFromPolar(magnitude, angle);
+      form.setValue("zR_jk", complex.re);
+      form.setValue("zX_jk", complex.im);
+    } catch (e) {}
+  };
+
+  const handlePolarMagnitudeChangeIj = (value: string) => {
+    setPolarMagnitudeIj(value);
+    try {
+      const magnitude = new Decimal(value || "0");
+      const angle = new Decimal(polarAngleIj || "0");
+      const complex = getComplexFromPolar(magnitude, angle);
+      form.setValue("zR_ij", complex.re);
+      form.setValue("zX_ij", complex.im);
+    } catch (e) {}
+  };
+
+  const handlePolarAngleChangeIj = (value: string) => {
+    setPolarAngleIj(value);
+    try {
+      const magnitude = new Decimal(polarMagnitudeIj || "0");
+      const angle = new Decimal(value || "0");
+      const complex = getComplexFromPolar(magnitude, angle);
+      form.setValue("zR_ij", complex.re);
+      form.setValue("zX_ij", complex.im);
+    } catch (e) {}
   };
 
   const handleCalculate = (data: PowerSystemParamsB) => {
@@ -116,8 +178,12 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
         angleVi: new Decimal(data.angleVi),
         angleVj: new Decimal(data.angleVj),
         angleVk: new Decimal(data.angleVk),
-        zR: new Decimal(data.zR),
-        zX: new Decimal(data.zX),
+        zR_ik: new Decimal(data.zR_ik),
+        zX_ik: new Decimal(data.zX_ik),
+        zR_jk: new Decimal(data.zR_jk),
+        zX_jk: new Decimal(data.zX_jk),
+        zR_ij: new Decimal(data.zR_ij),
+        zX_ij: new Decimal(data.zX_ij),
       };
 
       const calculatedResults = calculatePowerFlowB(decimalData);
@@ -148,92 +214,92 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
       },
       {
         parametro: "Pij",
-        valor: results.Pij.toFixed(2),
+        valor: results.Pij.toDecimalPlaces(10).toString(),
         unidade: "MW",
       },
       {
         parametro: "Pji",
-        valor: results.Pji.toFixed(2),
+        valor: results.Pji.toDecimalPlaces(10).toString(),
         unidade: "MW",
       },
       {
         parametro: "ΔPij",
-        valor: results.deltaPij.toFixed(2),
+        valor: results.deltaPij.toDecimalPlaces(10).toString(),
         unidade: "MW",
       },
       {
         parametro: "Pik",
-        valor: results.Pik.toFixed(2),
+        valor: results.Pik.toDecimalPlaces(10).toString(),
         unidade: "MW",
       },
       {
         parametro: "Pki",
-        valor: results.Pki.toFixed(2),
+        valor: results.Pki.toDecimalPlaces(10).toString(),
         unidade: "MW",
       },
       {
         parametro: "ΔPik",
-        valor: results.deltaPik.toFixed(2),
+        valor: results.deltaPik.toDecimalPlaces(10).toString(),
         unidade: "MW",
       },
       {
         parametro: "Pjk",
-        valor: results.Pjk.toFixed(2),
+        valor: results.Pjk.toDecimalPlaces(10).toString(),
         unidade: "MW",
       },
       {
         parametro: "Pkj",
-        valor: results.Pkj.toFixed(2),
+        valor: results.Pkj.toDecimalPlaces(10).toString(),
         unidade: "MW",
       },
       {
         parametro: "ΔPjk",
-        valor: results.deltaPjk.toFixed(2),
+        valor: results.deltaPjk.toDecimalPlaces(10).toString(),
         unidade: "MW",
       },
       {
         parametro: "Qij",
-        valor: results.Qij.toFixed(2),
+        valor: results.Qij.toDecimalPlaces(10).toString(),
         unidade: "MVAr",
       },
       {
         parametro: "Qji",
-        valor: results.Qji.toFixed(2),
+        valor: results.Qji.toDecimalPlaces(10).toString(),
         unidade: "MVAr",
       },
       {
         parametro: "ΔQij",
-        valor: results.deltaQij.toFixed(2),
+        valor: results.deltaQij.toDecimalPlaces(10).toString(),
         unidade: "MVAr",
       },
       {
         parametro: "Qik",
-        valor: results.Qik.toFixed(2),
+        valor: results.Qik.toDecimalPlaces(10).toString(),
         unidade: "MVAr",
       },
       {
         parametro: "Qki",
-        valor: results.Qki.toFixed(2),
+        valor: results.Qki.toDecimalPlaces(10).toString(),
         unidade: "MVAr",
       },
       {
         parametro: "ΔQik",
-        valor: results.deltaQik.toFixed(2),
+        valor: results.deltaQik.toDecimalPlaces(10).toString(),
         unidade: "MVAr",
       },
       {
         parametro: "Qjk",
-        valor: results.Qjk.toFixed(2),
+        valor: results.Qjk.toDecimalPlaces(10).toString(),
         unidade: "MVAr",
       },
       {
         parametro: "Qkj",
-        valor: results.Qkj.toFixed(2),
+        valor: results.Qkj.toDecimalPlaces(10).toString(),
         unidade: "MVAr",
       },
       {
         parametro: "ΔQjk",
-        valor: results.deltaQjk.toFixed(2),
+        valor: results.deltaQjk.toDecimalPlaces(10).toString(),
         unidade: "MVAr",
       },
     ];
@@ -278,23 +344,43 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
   ];
 
   useEffect(() => {
-    const initialComplex = getComplexFromRectangular(
-      initialValues?.zR ?? 10,
-      initialValues?.zX ?? 5
+    const initialComplexIk = getComplexFromRectangular(
+      initialValues?.zR_ik ?? 5,
+      initialValues?.zX_ik ?? 40
     );
-    setPolarMagnitude(initialComplex.abs().toFixed(2));
-    setPolarAngle(((initialComplex.arg() * 180) / Math.PI).toFixed(2));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const initialComplexJk = getComplexFromRectangular(
+      initialValues?.zR_jk ?? 5,
+      initialValues?.zX_jk ?? 40
+    );
+    const initialComplexIj = getComplexFromRectangular(
+      initialValues?.zR_ij ?? 5,
+      initialValues?.zX_ij ?? 40
+    );
+
+    const magnitudeIk = new Decimal(initialComplexIk.abs());
+    const angleIk = new Decimal(initialComplexIk.arg()).mul(180).div(PI);
+    setPolarMagnitudeIk(magnitudeIk.toDecimalPlaces(2).toString());
+    setPolarAngleIk(angleIk.toDecimalPlaces(2).toString());
+
+    const magnitudeJk = new Decimal(initialComplexJk.abs());
+    const angleJk = new Decimal(initialComplexJk.arg()).mul(180).div(PI);
+    setPolarMagnitudeJk(magnitudeJk.toDecimalPlaces(2).toString());
+    setPolarAngleJk(angleJk.toDecimalPlaces(2).toString());
+
+    const magnitudeIj = new Decimal(initialComplexIj.abs());
+    const angleIj = new Decimal(initialComplexIj.arg()).mul(180).div(PI);
+    setPolarMagnitudeIj(magnitudeIj.toDecimalPlaces(2).toString());
+    setPolarAngleIj(angleIj.toDecimalPlaces(2).toString());
   }, []);
 
   return (
     <div className={`flex gap-6 w-full h-fit ${className}`}>
-      <Card.Root className="w-96 h-fit overflow-y-auto">
+      <Card.Root className="w-200 h-fit overflow-y-auto">
         <Card.Header>
           <h2 className="text-xl font-semibold">Parâmetros do Sistema</h2>
         </Card.Header>
         <Form.Root form={form} onSubmit={handleCalculate}>
-          <div className="space-y-4 p-4">
+          <div className="grid grid-cols-2 gap-4 p-4">
             <Form.Item
               control={form.control}
               name="Vi"
@@ -304,11 +390,7 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                   title="Tensão Vi (kV)"
                   value={field.value}
                   onChange={(e: any) =>
-                    field.onChange(
-                      typeof e === "number"
-                        ? e
-                        : parseFloat(e.target.value) || 0
-                    )
+                    field.onChange(typeof e === "number" ? e : 0)
                   }
                   min={0}
                   max={1000}
@@ -325,11 +407,7 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                   title="Tensão Vj (kV)"
                   value={field.value}
                   onChange={(e: any) =>
-                    field.onChange(
-                      typeof e === "number"
-                        ? e
-                        : parseFloat(e.target.value) || 0
-                    )
+                    field.onChange(typeof e === "number" ? e : 0)
                   }
                   min={0}
                   max={1000}
@@ -346,11 +424,7 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                   title="Tensão Vk (kV)"
                   value={field.value}
                   onChange={(e: any) =>
-                    field.onChange(
-                      typeof e === "number"
-                        ? e
-                        : parseFloat(e.target.value) || 0
-                    )
+                    field.onChange(typeof e === "number" ? e : 0)
                   }
                   min={0}
                   max={1000}
@@ -367,11 +441,7 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                   title="Ângulo Vi (graus)"
                   value={field.value}
                   onChange={(e: any) =>
-                    field.onChange(
-                      typeof e === "number"
-                        ? e
-                        : parseFloat(e.target.value) || 0
-                    )
+                    field.onChange(typeof e === "number" ? e : 0)
                   }
                   min={-180}
                   max={180}
@@ -388,11 +458,7 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                   title="Ângulo Vj (graus)"
                   value={field.value}
                   onChange={(e: any) =>
-                    field.onChange(
-                      typeof e === "number"
-                        ? e
-                        : parseFloat(e.target.value) || 0
-                    )
+                    field.onChange(typeof e === "number" ? e : 0)
                   }
                   min={-180}
                   max={180}
@@ -409,11 +475,7 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                   title="Ângulo Vk (graus)"
                   value={field.value}
                   onChange={(e: any) =>
-                    field.onChange(
-                      typeof e === "number"
-                        ? e
-                        : parseFloat(e.target.value) || 0
-                    )
+                    field.onChange(typeof e === "number" ? e : 0)
                   }
                   min={-180}
                   max={180}
@@ -430,11 +492,7 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                   title="Tensão Nominal Vn (kV)"
                   value={field.value}
                   onChange={(e: any) =>
-                    field.onChange(
-                      typeof e === "number"
-                        ? e
-                        : parseFloat(e.target.value) || 0
-                    )
+                    field.onChange(typeof e === "number" ? e : 0)
                   }
                   min={0}
                   max={1000}
@@ -451,11 +509,7 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                   title="Comprimento L (km)"
                   value={field.value}
                   onChange={(e: any) =>
-                    field.onChange(
-                      typeof e === "number"
-                        ? e
-                        : parseFloat(e.target.value) || 0
-                    )
+                    field.onChange(typeof e === "number" ? e : 0)
                   }
                   min={0}
                   max={10000}
@@ -463,114 +517,130 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                 />
               )}
             />
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium">
-                Formato da Impedância:
-              </label>
-              <div className="flex items-center gap-2">
-                <span
-                  className={`text-xs ${
-                    impedanceFormat === "rectangular" ? "font-semibold" : ""
-                  }`}
-                >
-                  Retangular
-                </span>
-                <Switch
-                  checked={impedanceFormat === "polar"}
-                  onCheckedChange={(checked) =>
-                    handleImpedanceFormatChange(
-                      checked ? "polar" : "rectangular"
-                    )
-                  }
-                />
-                <span
-                  className={`text-xs ${
-                    impedanceFormat === "polar" ? "font-semibold" : ""
-                  }`}
-                >
-                  Polar
-                </span>
+            <div className="border-t pt-4 space-y-4 col-span-2">
+              <h3 className="text-sm font-semibold">Impedâncias</h3>
+
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-primary">Linha i-k:</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Form.Item
+                    control={form.control}
+                    name="zR_ik"
+                    render={({ field }) => (
+                      <Input
+                        type="number"
+                        title="R (Ω)"
+                        value={field.value}
+                        onChange={(e: any) =>
+                          field.onChange(typeof e === "number" ? e : 0)
+                        }
+                        min={-1000}
+                        max={1000}
+                        step={0.1}
+                      />
+                    )}
+                  />
+                  <Form.Item
+                    control={form.control}
+                    name="zX_ik"
+                    render={({ field }) => (
+                      <Input
+                        type="number"
+                        title="X (Ω)"
+                        value={field.value}
+                        onChange={(e: any) =>
+                          field.onChange(typeof e === "number" ? e : 0)
+                        }
+                        min={-1000}
+                        max={1000}
+                        step={0.1}
+                      />
+                    )}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-primary">Linha j-k:</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Form.Item
+                    control={form.control}
+                    name="zR_jk"
+                    render={({ field }) => (
+                      <Input
+                        type="number"
+                        title="R (Ω)"
+                        value={field.value}
+                        onChange={(e: any) =>
+                          field.onChange(typeof e === "number" ? e : 0)
+                        }
+                        min={-1000}
+                        max={1000}
+                        step={0.1}
+                      />
+                    )}
+                  />
+                  <Form.Item
+                    control={form.control}
+                    name="zX_jk"
+                    render={({ field }) => (
+                      <Input
+                        type="number"
+                        title="X (Ω)"
+                        value={field.value}
+                        onChange={(e: any) =>
+                          field.onChange(typeof e === "number" ? e : 0)
+                        }
+                        min={-1000}
+                        max={1000}
+                        step={0.1}
+                      />
+                    )}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-primary">Linha i-j:</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Form.Item
+                    control={form.control}
+                    name="zR_ij"
+                    render={({ field }) => (
+                      <Input
+                        type="number"
+                        title="R (Ω)"
+                        value={field.value}
+                        onChange={(e: any) =>
+                          field.onChange(typeof e === "number" ? e : 0)
+                        }
+                        min={-1000}
+                        max={1000}
+                        step={0.1}
+                      />
+                    )}
+                  />
+                  <Form.Item
+                    control={form.control}
+                    name="zX_ij"
+                    render={({ field }) => (
+                      <Input
+                        type="number"
+                        title="X (Ω)"
+                        value={field.value}
+                        onChange={(e: any) =>
+                          field.onChange(typeof e === "number" ? e : 0)
+                        }
+                        min={-1000}
+                        max={1000}
+                        step={0.1}
+                      />
+                    )}
+                  />
+                </div>
               </div>
             </div>
-            {impedanceFormat === "rectangular" ? (
-              <>
-                <Form.Item
-                  control={form.control}
-                  name="zR"
-                  render={({ field }) => (
-                    <Input
-                      type="number"
-                      title="Resistência R (Ω)"
-                      value={field.value}
-                      onChange={(e: any) =>
-                        field.onChange(
-                          typeof e === "number"
-                            ? e
-                            : parseFloat(e.target.value) || 0
-                        )
-                      }
-                      min={-1000}
-                      max={1000}
-                      step={0.1}
-                    />
-                  )}
-                />
-                <Form.Item
-                  control={form.control}
-                  name="zX"
-                  render={({ field }) => (
-                    <Input
-                      type="number"
-                      title="Reatância X (Ω)"
-                      value={field.value}
-                      onChange={(e: any) =>
-                        field.onChange(
-                          typeof e === "number"
-                            ? e
-                            : parseFloat(e.target.value) || 0
-                        )
-                      }
-                      min={-1000}
-                      max={1000}
-                      step={0.1}
-                    />
-                  )}
-                />
-                <div className="text-xs text-muted-foreground p-2 bg-muted rounded">
-                  z = {params.zR.toFixed(2)} + j{params.zX.toFixed(2)} Ω
-                </div>
-              </>
-            ) : (
-              <>
-                <Input
-                  type="number"
-                  title="Magnitude |Z| (Ω)"
-                  value={polarMagnitude}
-                  onChange={(e: any) => {
-                    handlePolarMagnitudeChange(e.target.value);
-                  }}
-                  min={0}
-                  max={10000}
-                  step={0.1}
-                />
-                <Input
-                  type="number"
-                  title="Ângulo θ (graus)"
-                  value={polarAngle}
-                  onChange={(e: any) => {
-                    handlePolarAngleChange(e.target.value);
-                  }}
-                  min={-180}
-                  max={180}
-                  step={0.1}
-                />
-                <div className="text-xs text-muted-foreground p-2 bg-muted rounded">
-                  z = {polarMagnitudeValue.toFixed(2)}∠
-                  {polarAngleValue.toFixed(2)}° Ω
-                </div>
-              </>
-            )}
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full col-span-2" disabled={isLoading}>
               {isLoading ? (
                 <div className="flex items-center gap-2">
                   <LoadingIcon size={16} />
@@ -615,28 +685,72 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                   >
                     <polygon points="0 0, 10 3.5, 0 7" fill="#dc2626" />
                   </marker>
+                  <marker
+                    id="current-direction-b"
+                    markerWidth="12"
+                    markerHeight="10"
+                    refX="6"
+                    refY="5"
+                    orient="auto"
+                  >
+                    <polygon points="0 0, 12 5, 0 10" fill="#16a34a" />
+                  </marker>
                 </defs>
 
                 <line
-                  x1="150"
+                  x1="170"
                   y1="450"
+                  x2="170"
+                  y2="475"
+                  stroke="#000000"
+                  strokeWidth="3"
+                />
+                <line
+                  x1="170"
+                  y1="475"
+                  x2="480"
+                  y2="125"
+                  stroke="#000000"
+                  strokeWidth="3"
+                />
+                <line
+                  x1="480"
+                  y1="125"
                   x2="500"
                   y2="100"
                   stroke="#000000"
                   strokeWidth="3"
                 />
+
                 <line
-                  x1="850"
+                  x1="830"
                   y1="450"
+                  x2="830"
+                  y2="475"
+                  stroke="#000000"
+                  strokeWidth="3"
+                />
+                <line
+                  x1="830"
+                  y1="475"
+                  x2="520"
+                  y2="125"
+                  stroke="#000000"
+                  strokeWidth="3"
+                />
+                <line
+                  x1="520"
+                  y1="125"
                   x2="500"
                   y2="100"
                   stroke="#000000"
                   strokeWidth="3"
                 />
+
                 <line
-                  x1="150"
+                  x1="170"
                   y1="450"
-                  x2="850"
+                  x2="830"
                   y2="450"
                   stroke="#000000"
                   strokeWidth="3"
@@ -650,6 +764,8 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                   stroke="#000000"
                   strokeWidth="8"
                 />
+                <GroundIcon x={130} y={450} direction="down" />
+
                 <line
                   x1="800"
                   y1="450"
@@ -658,6 +774,8 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                   stroke="#000000"
                   strokeWidth="8"
                 />
+                <GroundIcon x={870} y={450} direction="down" />
+
                 <line
                   x1="450"
                   y1="100"
@@ -666,7 +784,6 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                   stroke="#000000"
                   strokeWidth="8"
                 />
-
                 <line
                   x1="500"
                   y1="100"
@@ -675,10 +792,217 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                   stroke="#000000"
                   strokeWidth="3"
                 />
-
-                <GroundIcon x={150} y={450} direction="down" />
-                <GroundIcon x={850} y={450} direction="down" />
                 <GroundIcon x={500} y={180} direction="down" />
+
+                {params.Vi === params.Vk && params.angleVi === params.angleVk ? null : params.Vi > params.Vk || (params.Vi === params.Vk && params.angleVi > params.angleVk) ? (
+                  <>
+                    {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((delay, idx) => (
+                      <React.Fragment key={`flow-ik-${idx}`}>
+                        <circle cx="0" cy="0" r="3" fill="#16a34a" opacity="0.8">
+                          <animateMotion
+                            path="M 170 450 L 170 475 L 480 125 L 500 100"
+                            dur="10s"
+                            begin={`${delay}s`}
+                            repeatCount="indefinite"
+                          />
+                        </circle>
+                      </React.Fragment>
+                    ))}
+                  </>
+                ) : (
+                  <>
+                    {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((delay, idx) => (
+                      <React.Fragment key={`flow-ki-${idx}`}>
+                        <circle cx="0" cy="0" r="3" fill="#16a34a" opacity="0.8">
+                          <animateMotion
+                            path="M 500 100 L 480 125 L 170 475 L 170 450"
+                            dur="10s"
+                            begin={`${delay}s`}
+                            repeatCount="indefinite"
+                          />
+                        </circle>
+                      </React.Fragment>
+                    ))}
+                  </>
+                )}
+
+                {params.Vj === params.Vk && params.angleVj === params.angleVk ? null : params.Vj > params.Vk || (params.Vj === params.Vk && params.angleVj > params.angleVk) ? (
+                  <>
+                    {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((delay, idx) => (
+                      <React.Fragment key={`flow-jk-${idx}`}>
+                        <circle cx="0" cy="0" r="3" fill="#16a34a" opacity="0.8">
+                          <animateMotion
+                            path="M 830 450 L 830 475 L 520 125 L 500 100"
+                            dur="10s"
+                            begin={`${delay}s`}
+                            repeatCount="indefinite"
+                          />
+                        </circle>
+                      </React.Fragment>
+                    ))}
+                  </>
+                ) : (
+                  <>
+                    {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((delay, idx) => (
+                      <React.Fragment key={`flow-kj-${idx}`}>
+                        <circle cx="0" cy="0" r="3" fill="#16a34a" opacity="0.8">
+                          <animateMotion
+                            path="M 500 100 L 520 125 L 830 475 L 830 450"
+                            dur="10s"
+                            begin={`${delay}s`}
+                            repeatCount="indefinite"
+                          />
+                        </circle>
+                      </React.Fragment>
+                    ))}
+                  </>
+                )}
+
+                {params.Vi === params.Vj && params.angleVi === params.angleVj ? null : params.Vi > params.Vj || (params.Vi === params.Vj && params.angleVi > params.angleVj) ? (
+                  <>
+                    {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((delay, idx) => (
+                      <React.Fragment key={`flow-ij-${idx}`}>
+                        <circle cx="0" cy="0" r="3" fill="#16a34a" opacity="0.8">
+                          <animateMotion
+                            path="M 170 450 L 830 450"
+                            dur="10s"
+                            begin={`${delay}s`}
+                            repeatCount="indefinite"
+                          />
+                        </circle>
+                      </React.Fragment>
+                    ))}
+                  </>
+                ) : (
+                  <>
+                    {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((delay, idx) => (
+                      <React.Fragment key={`flow-ji-${idx}`}>
+                        <circle cx="0" cy="0" r="3" fill="#16a34a" opacity="0.8">
+                          <animateMotion
+                            path="M 830 450 L 170 450"
+                            dur="10s"
+                            begin={`${delay}s`}
+                            repeatCount="indefinite"
+                          />
+                        </circle>
+                      </React.Fragment>
+                    ))}
+                  </>
+                )}
+
+                <rect
+                  x="200"
+                  y="220"
+                  width="150"
+                  height="40"
+                  fill="white"
+                  stroke="#000000"
+                  strokeWidth="1"
+                  rx="4"
+                />
+                <text
+                  x="275"
+                  y="235"
+                  className="text-xs font-semibold fill-black"
+                  textAnchor="middle"
+                >
+                  Z(i-k)
+                </text>
+                <text
+                  x="275"
+                  y="252"
+                  className="text-xs fill-black"
+                  textAnchor="middle"
+                >
+                  {new Decimal(params.zR_ik).toDecimalPlaces(2).toString()}+j
+                  {new Decimal(params.zX_ik).toDecimalPlaces(2).toString()}Ω
+                </text>
+
+                <rect
+                  x="600"
+                  y="220"
+                  width="150"
+                  height="40"
+                  fill="white"
+                  stroke="#000000"
+                  strokeWidth="1"
+                  rx="4"
+                />
+                <text
+                  x="675"
+                  y="235"
+                  className="text-xs font-semibold fill-black"
+                  textAnchor="middle"
+                >
+                  Z(j-k)
+                </text>
+                <text
+                  x="675"
+                  y="252"
+                  className="text-xs fill-black"
+                  textAnchor="middle"
+                >
+                  {new Decimal(params.zR_jk).toDecimalPlaces(2).toString()}+j
+                  {new Decimal(params.zX_jk).toDecimalPlaces(2).toString()}Ω
+                </text>
+
+                <rect
+                  x="425"
+                  y="460"
+                  width="150"
+                  height="40"
+                  fill="white"
+                  stroke="#000000"
+                  strokeWidth="1"
+                  rx="4"
+                />
+                <text
+                  x="500"
+                  y="475"
+                  className="text-xs font-semibold fill-black"
+                  textAnchor="middle"
+                >
+                  Z(i-j)
+                </text>
+                <text
+                  x="500"
+                  y="492"
+                  className="text-xs fill-black"
+                  textAnchor="middle"
+                >
+                  {new Decimal(params.zR_ij).toDecimalPlaces(2).toString()}+j
+                  {new Decimal(params.zX_ij).toDecimalPlaces(2).toString()}Ω
+                </text>
+
+                <text
+                  x="275"
+                  y="200"
+                  className="text-sm font-bold"
+                  fill="#16a34a"
+                  textAnchor="middle"
+                >
+                  {params.Vi === params.Vk && params.angleVi === params.angleVk ? "" : params.Vi > params.Vk || (params.Vi === params.Vk && params.angleVi > params.angleVk) ? "I(i→k)" : "I(k→i)"}
+                </text>
+
+                <text
+                  x="675"
+                  y="200"
+                  className="text-sm font-bold"
+                  fill="#16a34a"
+                  textAnchor="middle"
+                >
+                  {params.Vj === params.Vk && params.angleVj === params.angleVk ? "" : params.Vj > params.Vk || (params.Vj === params.Vk && params.angleVj > params.angleVk) ? "I(j→k)" : "I(k→j)"}
+                </text>
+
+                <text
+                  x="500"
+                  y="440"
+                  className="text-sm font-bold"
+                  fill="#16a34a"
+                  textAnchor="middle"
+                >
+                  {params.Vi === params.Vj && params.angleVi === params.angleVj ? "" : params.Vi > params.Vj || (params.Vi === params.Vj && params.angleVi > params.angleVj) ? "I(i→j)" : "I(j→i)"}
+                </text>
 
                 <g transform="translate(200, 300)">
                   <PhasorPair

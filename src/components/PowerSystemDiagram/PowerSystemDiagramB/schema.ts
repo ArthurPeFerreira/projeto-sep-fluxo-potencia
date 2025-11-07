@@ -33,11 +33,27 @@ export const powerSystemSchemaB = z.object({
     .number()
     .min(0, "Comprimento deve ser maior ou igual a 0")
     .max(10000, "Comprimento deve ser menor ou igual a 10000"),
-  zR: z
+  zR_ik: z
     .number()
     .min(-1000, "Resistência deve ser entre -1000 e 1000")
     .max(1000, "Resistência deve ser entre -1000 e 1000"),
-  zX: z
+  zX_ik: z
+    .number()
+    .min(-1000, "Reatância deve ser entre -1000 e 1000")
+    .max(1000, "Reatância deve ser entre -1000 e 1000"),
+  zR_jk: z
+    .number()
+    .min(-1000, "Resistência deve ser entre -1000 e 1000")
+    .max(1000, "Resistência deve ser entre -1000 e 1000"),
+  zX_jk: z
+    .number()
+    .min(-1000, "Reatância deve ser entre -1000 e 1000")
+    .max(1000, "Reatância deve ser entre -1000 e 1000"),
+  zR_ij: z
+    .number()
+    .min(-1000, "Resistência deve ser entre -1000 e 1000")
+    .max(1000, "Resistência deve ser entre -1000 e 1000"),
+  zX_ij: z
     .number()
     .min(-1000, "Reatância deve ser entre -1000 e 1000")
     .max(1000, "Reatância deve ser entre -1000 e 1000"),
