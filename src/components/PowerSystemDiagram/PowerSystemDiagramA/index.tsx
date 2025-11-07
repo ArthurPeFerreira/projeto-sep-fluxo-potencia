@@ -131,32 +131,32 @@ export const PowerSystemDiagramA: React.FC<PowerSystemDiagramAProps> = ({
       },
       {
         parametro: "Pij",
-        valor: results.Pij.toDecimalPlaces(2).toString(),
+        valor: results.Pij.toDecimalPlaces(10).toString(),
         unidade: "MW",
       },
       {
         parametro: "Pji",
-        valor: results.Pji.toDecimalPlaces(2).toString(),
+        valor: results.Pji.toDecimalPlaces(10).toString(),
         unidade: "MW",
       },
       {
         parametro: "ΔP",
-        valor: results.deltaP.toDecimalPlaces(2).toString(),
+        valor: results.deltaP.toDecimalPlaces(10).toString(),
         unidade: "MW",
       },
       {
         parametro: "Qij",
-        valor: results.Qij.toDecimalPlaces(2).toString(),
+        valor: results.Qij.toDecimalPlaces(10).toString(),
         unidade: "MVAr",
       },
       {
         parametro: "Qji",
-        valor: results.Qji.toDecimalPlaces(2).toString(),
+        valor: results.Qji.toDecimalPlaces(10).toString(),
         unidade: "MVAr",
       },
       {
         parametro: "ΔQ",
-        valor: results.deltaQ.toDecimalPlaces(2).toString(),
+        valor: results.deltaQ.toDecimalPlaces(10).toString(),
         unidade: "MVAr",
       },
     ];
@@ -485,7 +485,11 @@ export const PowerSystemDiagramA: React.FC<PowerSystemDiagramAProps> = ({
                   strokeWidth="3"
                 />
 
-                {params.Vi > params.Vj ? (
+                {params.Vi === params.Vj &&
+                params.angleVi === params.angleVj ? null : params.Vi >
+                    params.Vj ||
+                  (params.Vi === params.Vj &&
+                    params.angleVi > params.angleVj) ? (
                   <>
                     {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((delay, idx) => (
                       <React.Fragment key={`flow-${idx}`}>
@@ -543,7 +547,7 @@ export const PowerSystemDiagramA: React.FC<PowerSystemDiagramAProps> = ({
                       I →
                     </text>
                   </>
-                ) : params.Vj > params.Vi ? (
+                ) : (
                   <>
                     {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((delay, idx) => (
                       <React.Fragment key={`flow-${idx}`}>
@@ -601,7 +605,7 @@ export const PowerSystemDiagramA: React.FC<PowerSystemDiagramAProps> = ({
                       ← I
                     </text>
                   </>
-                ) : null}
+                )}
 
                 <rect
                   x="300"
