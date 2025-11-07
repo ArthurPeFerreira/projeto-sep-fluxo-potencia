@@ -123,6 +123,9 @@ export function Input({
   const handleKeyDown = React.useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Enter" && isNumber) {
+        e.preventDefault();
+        e.stopPropagation();
+        
         const inputValue =
           localValue !== null ? localValue : e.currentTarget.value;
         setLocalValue(null);
@@ -130,8 +133,6 @@ export function Input({
         const max = (props as any)?.max;
 
         if (inputValue === "") {
-          e.preventDefault();
-          e.stopPropagation();
           const minValue = min !== undefined ? Number(min) : 0;
           onChange(minValue);
           return;
@@ -143,18 +144,12 @@ export function Input({
 
           if (min !== undefined && numericValue.lt(min)) {
             finalValue = new Decimal(min);
-            e.preventDefault();
-            e.stopPropagation();
           } else if (max !== undefined && numericValue.gt(max)) {
             finalValue = new Decimal(max);
-            e.preventDefault();
-            e.stopPropagation();
           }
 
           onChange(Number(finalValue.toString()));
         } catch {
-          e.preventDefault();
-          e.stopPropagation();
           if (min !== undefined) {
             onChange(Number(min));
           } else if (max !== undefined) {
@@ -163,6 +158,7 @@ export function Input({
             onChange(0);
           }
         }
+        return;
       }
 
       if ((props as any)?.onKeyDown) {

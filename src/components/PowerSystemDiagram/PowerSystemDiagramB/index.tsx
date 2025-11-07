@@ -621,7 +621,7 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                   x1="150"
                   y1="450"
                   x2="500"
-                  y2="150"
+                  y2="100"
                   stroke="#000000"
                   strokeWidth="3"
                 />
@@ -629,7 +629,7 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                   x1="850"
                   y1="450"
                   x2="500"
-                  y2="150"
+                  y2="100"
                   stroke="#000000"
                   strokeWidth="3"
                 />
@@ -660,16 +660,25 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                 />
                 <line
                   x1="450"
-                  y1="150"
+                  y1="100"
                   x2="550"
-                  y2="150"
+                  y2="100"
                   stroke="#000000"
                   strokeWidth="8"
                 />
 
+                <line
+                  x1="500"
+                  y1="100"
+                  x2="500"
+                  y2="180"
+                  stroke="#000000"
+                  strokeWidth="3"
+                />
+
                 <GroundIcon x={150} y={450} direction="down" />
                 <GroundIcon x={850} y={450} direction="down" />
-                <GroundIcon x={500} y={150} direction="down" />
+                <GroundIcon x={500} y={180} direction="down" />
 
                 <g transform="translate(200, 300)">
                   <PhasorPair
@@ -731,7 +740,7 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                 </text>
                 <text
                   x="500"
-                  y="130"
+                  y="85"
                   className="text-lg font-bold fill-black"
                   textAnchor="middle"
                 >
@@ -756,7 +765,7 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                 </text>
                 <text
                   x="500"
-                  y="110"
+                  y="65"
                   className="text-sm font-medium fill-black"
                   textAnchor="middle"
                 >
