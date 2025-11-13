@@ -13,7 +13,7 @@ import GroundIcon from "../GroundIcon";
 import PhasorPair from "../PhasorPair";
 import { powerSystemSchemaB } from "./schema";
 import { PowerSystemParamsB, PowerSystemDiagramBProps } from "./types";
-import { getComplexFromRectangular, getComplexFromPolar } from "./utils";
+import { getComplexFromRectangular, getComplexFromPolar } from "../utils";
 import {
   calculatePowerFlowB,
   PowerFlowResultsB,
@@ -343,6 +343,126 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
     },
   ];
 
+  const nodePositions = {
+    i: { x: 220, y: 470 },
+    j: { x: 780, y: 470 },
+    k: { x: 500, y: 160 },
+  };
+
+  const busHalfWidth = 50;
+  const topBusHalfWidth = 50;
+  const topConnectionOffset = 22;
+
+  const busSegments = {
+    i: {
+      start: { x: nodePositions.i.x - busHalfWidth, y: nodePositions.i.y },
+      end: { x: nodePositions.i.x + busHalfWidth, y: nodePositions.i.y },
+    },
+    j: {
+      start: { x: nodePositions.j.x - busHalfWidth, y: nodePositions.j.y },
+      end: { x: nodePositions.j.x + busHalfWidth, y: nodePositions.j.y },
+    },
+  };
+
+  const topBusSegment = {
+    start: { x: nodePositions.k.x - topBusHalfWidth, y: nodePositions.k.y },
+    end: { x: nodePositions.k.x + topBusHalfWidth, y: nodePositions.k.y },
+  };
+
+  const topConnections = {
+    left: {
+      x: topBusSegment.start.x + topConnectionOffset,
+      y: topBusSegment.start.y,
+    },
+    right: {
+      x: topBusSegment.end.x - topConnectionOffset,
+      y: topBusSegment.end.y,
+    },
+    ground: {
+      x: nodePositions.k.x,
+      y: topBusSegment.start.y,
+    },
+  };
+
+  const branchSegments = {
+    ik: {
+      start: { x: busSegments.i.end.x, y: busSegments.i.end.y },
+      end: topConnections.left,
+    },
+    jk: {
+      start: { x: busSegments.j.start.x, y: busSegments.j.start.y },
+      end: topConnections.right,
+    },
+    ij: {
+      start: { x: busSegments.i.end.x, y: busSegments.i.end.y },
+      end: { x: busSegments.j.start.x, y: busSegments.j.start.y },
+    },
+  };
+
+  const getMidpoint = (segment: {
+    start: { x: number; y: number };
+    end: { x: number; y: number };
+  }) => ({
+    x: (segment.start.x + segment.end.x) / 2,
+    y: (segment.start.y + segment.end.y) / 2,
+  });
+
+  const branchMidpoints = {
+    ik: getMidpoint(branchSegments.ik),
+    jk: getMidpoint(branchSegments.jk),
+    ij: getMidpoint(branchSegments.ij),
+  };
+
+  const impedanceBoxSize = { width: 170, height: 48 };
+
+  const branchBoxes = {
+    ik: {
+      x: branchMidpoints.ik.x - impedanceBoxSize.width / 2,
+      y: branchMidpoints.ik.y + 40,
+    },
+    jk: {
+      x: branchMidpoints.jk.x - impedanceBoxSize.width / 2,
+      y: branchMidpoints.jk.y + 40,
+    },
+    ij: {
+      x: branchMidpoints.ij.x - impedanceBoxSize.width / 2,
+      y: branchMidpoints.ij.y + 40,
+    },
+  };
+
+  const currentLabelOffsets = {
+    ik: { x: -15, y: 10 },
+    jk: { x: 15, y: 10 },
+    ij: { x: 0, y: -35 },
+  };
+
+  const groundPositions = {
+    i: { x: busSegments.i.start.x + 30, y: nodePositions.i.y },
+    j: { x: busSegments.j.end.x - 30, y: nodePositions.j.y },
+    k: { x: nodePositions.k.x, y: nodePositions.k.y },
+  };
+
+  const branchPaths = {
+    ik: `M ${branchSegments.ik.start.x} ${branchSegments.ik.start.y} L ${branchSegments.ik.end.x} ${branchSegments.ik.end.y}`,
+    ki: `M ${branchSegments.ik.end.x} ${branchSegments.ik.end.y} L ${branchSegments.ik.start.x} ${branchSegments.ik.start.y}`,
+    jk: `M ${branchSegments.jk.start.x} ${branchSegments.jk.start.y} L ${branchSegments.jk.end.x} ${branchSegments.jk.end.y}`,
+    kj: `M ${branchSegments.jk.end.x} ${branchSegments.jk.end.y} L ${branchSegments.jk.start.x} ${branchSegments.jk.start.y}`,
+    ij: `M ${branchSegments.ij.start.x} ${branchSegments.ij.start.y} L ${branchSegments.ij.end.x} ${branchSegments.ij.end.y}`,
+    ji: `M ${branchSegments.ij.end.x} ${branchSegments.ij.end.y} L ${branchSegments.ij.start.x} ${branchSegments.ij.start.y}`,
+  };
+
+  const flowOffsets = {
+    ik: { x: 0, y: 3 },
+    jk: { x: 0, y: 3 },
+    ij: { x: 0, y: 3 },
+  };
+
+  const phasorOffsets = {
+    ik: { x: -50, y: 10 },
+    jk: { x: 10, y: 10 },
+    ij: { x: -60, y: 20 },
+  };
+
   useEffect(() => {
     const initialComplexIk = getComplexFromRectangular(
       initialValues?.zR_ik ?? 5,
@@ -375,7 +495,7 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
 
   return (
     <div className={`flex gap-6 w-full h-fit ${className}`}>
-      <Card.Root className="w-200 h-fit overflow-y-auto">
+      <Card.Root className="w-150 h-fit overflow-y-auto">
         <Card.Header>
           <h2 className="text-xl font-semibold">Parâmetros do Sistema</h2>
         </Card.Header>
@@ -388,40 +508,6 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                 <Input
                   type="number"
                   title="Tensão Vi (kV)"
-                  value={field.value}
-                  onChange={(e: any) =>
-                    field.onChange(typeof e === "number" ? e : 0)
-                  }
-                  min={0}
-                  max={1000}
-                  step={1}
-                />
-              )}
-            />
-            <Form.Item
-              control={form.control}
-              name="Vj"
-              render={({ field }) => (
-                <Input
-                  type="number"
-                  title="Tensão Vj (kV)"
-                  value={field.value}
-                  onChange={(e: any) =>
-                    field.onChange(typeof e === "number" ? e : 0)
-                  }
-                  min={0}
-                  max={1000}
-                  step={1}
-                />
-              )}
-            />
-            <Form.Item
-              control={form.control}
-              name="Vk"
-              render={({ field }) => (
-                <Input
-                  type="number"
-                  title="Tensão Vk (kV)"
                   value={field.value}
                   onChange={(e: any) =>
                     field.onChange(typeof e === "number" ? e : 0)
@@ -451,6 +537,24 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
             />
             <Form.Item
               control={form.control}
+              name="Vj"
+              render={({ field }) => (
+                <Input
+                  type="number"
+                  title="Tensão Vj (kV)"
+                  value={field.value}
+                  onChange={(e: any) =>
+                    field.onChange(typeof e === "number" ? e : 0)
+                  }
+                  min={0}
+                  max={1000}
+                  step={1}
+                />
+              )}
+            />
+
+            <Form.Item
+              control={form.control}
               name="angleVj"
               render={({ field }) => (
                 <Input
@@ -462,6 +566,23 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                   }
                   min={-180}
                   max={180}
+                  step={1}
+                />
+              )}
+            />
+            <Form.Item
+              control={form.control}
+              name="Vk"
+              render={({ field }) => (
+                <Input
+                  type="number"
+                  title="Tensão Vk (kV)"
+                  value={field.value}
+                  onChange={(e: any) =>
+                    field.onChange(typeof e === "number" ? e : 0)
+                  }
+                  min={0}
+                  max={1000}
                   step={1}
                 />
               )}
@@ -517,9 +638,7 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                 />
               )}
             />
-            <div className="border-t pt-4 space-y-4 col-span-2">
-              <h3 className="text-sm font-semibold">Impedâncias</h3>
-
+            <div className="space-y-4 col-span-2">
               <div className="space-y-2">
                 <p className="text-xs font-medium text-primary">Linha i-k:</p>
                 <div className="grid grid-cols-2 gap-2">
@@ -640,7 +759,11 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                 </div>
               </div>
             </div>
-            <Button type="submit" className="w-full col-span-2" disabled={isLoading}>
+            <Button
+              type="submit"
+              className="w-full col-span-2"
+              disabled={isLoading}
+            >
               {isLoading ? (
                 <div className="flex items-center gap-2">
                   <LoadingIcon size={16} />
@@ -659,7 +782,7 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
           <Card.Content className="p-2 h-fit flex flex-col overflow-hidden">
             <div className="w-full h-full overflow-hidden">
               <svg
-                viewBox="0 90 950 500"
+                viewBox="0 0 1000 650"
                 className="w-fit h-fit"
                 preserveAspectRatio="xMidYMid meet"
                 xmlns="http://www.w3.org/2000/svg"
@@ -698,109 +821,89 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                 </defs>
 
                 <line
-                  x1="170"
-                  y1="450"
-                  x2="170"
-                  y2="475"
-                  stroke="#000000"
-                  strokeWidth="3"
-                />
-                <line
-                  x1="170"
-                  y1="475"
-                  x2="480"
-                  y2="125"
-                  stroke="#000000"
-                  strokeWidth="3"
-                />
-                <line
-                  x1="480"
-                  y1="125"
-                  x2="500"
-                  y2="100"
-                  stroke="#000000"
-                  strokeWidth="3"
-                />
-
-                <line
-                  x1="830"
-                  y1="450"
-                  x2="830"
-                  y2="475"
-                  stroke="#000000"
-                  strokeWidth="3"
-                />
-                <line
-                  x1="830"
-                  y1="475"
-                  x2="520"
-                  y2="125"
-                  stroke="#000000"
-                  strokeWidth="3"
-                />
-                <line
-                  x1="520"
-                  y1="125"
-                  x2="500"
-                  y2="100"
-                  stroke="#000000"
-                  strokeWidth="3"
-                />
-
-                <line
-                  x1="170"
-                  y1="450"
-                  x2="830"
-                  y2="450"
-                  stroke="#000000"
-                  strokeWidth="3"
-                />
-
-                <line
-                  x1="100"
-                  y1="450"
-                  x2="200"
-                  y2="450"
+                  x1={busSegments.i.start.x}
+                  y1={busSegments.i.start.y}
+                  x2={busSegments.i.end.x}
+                  y2={busSegments.i.end.y}
                   stroke="#000000"
                   strokeWidth="8"
                 />
-                <GroundIcon x={130} y={450} direction="down" />
+                <GroundIcon
+                  x={groundPositions.i.x}
+                  y={groundPositions.i.y}
+                  direction="down"
+                />
 
                 <line
-                  x1="800"
-                  y1="450"
-                  x2="900"
-                  y2="450"
+                  x1={busSegments.j.start.x}
+                  y1={busSegments.j.start.y}
+                  x2={busSegments.j.end.x}
+                  y2={busSegments.j.end.y}
                   stroke="#000000"
                   strokeWidth="8"
                 />
-                <GroundIcon x={870} y={450} direction="down" />
+                <GroundIcon
+                  x={groundPositions.j.x}
+                  y={groundPositions.j.y}
+                  direction="down"
+                />
 
                 <line
-                  x1="450"
-                  y1="100"
-                  x2="550"
-                  y2="100"
+                  x1={topBusSegment.start.x}
+                  y1={topBusSegment.start.y}
+                  x2={topBusSegment.end.x}
+                  y2={topBusSegment.end.y}
                   stroke="#000000"
                   strokeWidth="8"
                 />
+                <GroundIcon
+                  x={groundPositions.k.x}
+                  y={groundPositions.k.y}
+                  direction="down"
+                />
+
                 <line
-                  x1="500"
-                  y1="100"
-                  x2="500"
-                  y2="180"
+                  x1={branchSegments.ik.start.x}
+                  y1={branchSegments.ik.start.y}
+                  x2={branchSegments.ik.end.x}
+                  y2={branchSegments.ik.end.y}
                   stroke="#000000"
                   strokeWidth="3"
                 />
-                <GroundIcon x={500} y={180} direction="down" />
+                <line
+                  x1={branchSegments.jk.start.x}
+                  y1={branchSegments.jk.start.y}
+                  x2={branchSegments.jk.end.x}
+                  y2={branchSegments.jk.end.y}
+                  stroke="#000000"
+                  strokeWidth="3"
+                />
+                <line
+                  x1={branchSegments.ij.start.x}
+                  y1={branchSegments.ij.start.y}
+                  x2={branchSegments.ij.end.x}
+                  y2={branchSegments.ij.end.y}
+                  stroke="#000000"
+                  strokeWidth="3"
+                />
 
-                {params.Vi === params.Vk && params.angleVi === params.angleVk ? null : params.Vi > params.Vk || (params.Vi === params.Vk && params.angleVi > params.angleVk) ? (
+                {params.Vi === params.Vk &&
+                params.angleVi === params.angleVk ? null : params.Vi >
+                    params.Vk ||
+                  (params.Vi === params.Vk &&
+                    params.angleVi > params.angleVk) ? (
                   <>
                     {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((delay, idx) => (
                       <React.Fragment key={`flow-ik-${idx}`}>
-                        <circle cx="0" cy="0" r="3" fill="#16a34a" opacity="0.8">
+                        <circle
+                          cx={flowOffsets.ik.x}
+                          cy={flowOffsets.ik.y}
+                          r="3"
+                          fill="#16a34a"
+                          opacity="0.8"
+                        >
                           <animateMotion
-                            path="M 170 450 L 170 475 L 480 125 L 500 100"
+                            path={branchPaths.ik}
                             dur="10s"
                             begin={`${delay}s`}
                             repeatCount="indefinite"
@@ -813,9 +916,15 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                   <>
                     {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((delay, idx) => (
                       <React.Fragment key={`flow-ki-${idx}`}>
-                        <circle cx="0" cy="0" r="3" fill="#16a34a" opacity="0.8">
+                        <circle
+                          cx={flowOffsets.ik.x}
+                          cy={flowOffsets.ik.y}
+                          r="3"
+                          fill="#16a34a"
+                          opacity="0.8"
+                        >
                           <animateMotion
-                            path="M 500 100 L 480 125 L 170 475 L 170 450"
+                            path={branchPaths.ki}
                             dur="10s"
                             begin={`${delay}s`}
                             repeatCount="indefinite"
@@ -826,13 +935,23 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                   </>
                 )}
 
-                {params.Vj === params.Vk && params.angleVj === params.angleVk ? null : params.Vj > params.Vk || (params.Vj === params.Vk && params.angleVj > params.angleVk) ? (
+                {params.Vj === params.Vk &&
+                params.angleVj === params.angleVk ? null : params.Vj >
+                    params.Vk ||
+                  (params.Vj === params.Vk &&
+                    params.angleVj > params.angleVk) ? (
                   <>
                     {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((delay, idx) => (
                       <React.Fragment key={`flow-jk-${idx}`}>
-                        <circle cx="0" cy="0" r="3" fill="#16a34a" opacity="0.8">
+                        <circle
+                          cx={flowOffsets.jk.x}
+                          cy={flowOffsets.jk.y}
+                          r="3"
+                          fill="#16a34a"
+                          opacity="0.8"
+                        >
                           <animateMotion
-                            path="M 830 450 L 830 475 L 520 125 L 500 100"
+                            path={branchPaths.jk}
                             dur="10s"
                             begin={`${delay}s`}
                             repeatCount="indefinite"
@@ -845,9 +964,15 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                   <>
                     {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((delay, idx) => (
                       <React.Fragment key={`flow-kj-${idx}`}>
-                        <circle cx="0" cy="0" r="3" fill="#16a34a" opacity="0.8">
+                        <circle
+                          cx={flowOffsets.jk.x}
+                          cy={flowOffsets.jk.y}
+                          r="3"
+                          fill="#16a34a"
+                          opacity="0.8"
+                        >
                           <animateMotion
-                            path="M 500 100 L 520 125 L 830 475 L 830 450"
+                            path={branchPaths.kj}
                             dur="10s"
                             begin={`${delay}s`}
                             repeatCount="indefinite"
@@ -858,18 +983,32 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                   </>
                 )}
 
-                {params.Vi === params.Vj && params.angleVi === params.angleVj ? null : params.Vi > params.Vj || (params.Vi === params.Vj && params.angleVi > params.angleVj) ? (
+                {params.Vi === params.Vj &&
+                params.angleVi === params.angleVj ? null : params.Vi >
+                    params.Vj ||
+                  (params.Vi === params.Vj &&
+                    params.angleVi > params.angleVj) ? (
                   <>
                     {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((delay, idx) => (
                       <React.Fragment key={`flow-ij-${idx}`}>
-                        <circle cx="0" cy="0" r="3" fill="#16a34a" opacity="0.8">
-                          <animateMotion
-                            path="M 170 450 L 830 450"
-                            dur="10s"
-                            begin={`${delay}s`}
-                            repeatCount="indefinite"
-                          />
-                        </circle>
+                        <g
+                          transform={`translate(${flowOffsets.ij.x}, ${flowOffsets.ij.y})`}
+                        >
+                          <circle
+                            cx="0"
+                            cy="0"
+                            r="3"
+                            fill="#16a34a"
+                            opacity="0.8"
+                          >
+                            <animateMotion
+                              path={branchPaths.ij}
+                              dur="10s"
+                              begin={`${delay}s`}
+                              repeatCount="indefinite"
+                            />
+                          </circle>
+                        </g>
                       </React.Fragment>
                     ))}
                   </>
@@ -877,40 +1016,50 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                   <>
                     {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((delay, idx) => (
                       <React.Fragment key={`flow-ji-${idx}`}>
-                        <circle cx="0" cy="0" r="3" fill="#16a34a" opacity="0.8">
-                          <animateMotion
-                            path="M 830 450 L 170 450"
-                            dur="10s"
-                            begin={`${delay}s`}
-                            repeatCount="indefinite"
-                          />
-                        </circle>
+                        <g
+                          transform={`translate(${flowOffsets.ij.x}, ${flowOffsets.ij.y})`}
+                        >
+                          <circle
+                            cx="0"
+                            cy="0"
+                            r="3"
+                            fill="#16a34a"
+                            opacity="0.8"
+                          >
+                            <animateMotion
+                              path={branchPaths.ji}
+                              dur="10s"
+                              begin={`${delay}s`}
+                              repeatCount="indefinite"
+                            />
+                          </circle>
+                        </g>
                       </React.Fragment>
                     ))}
                   </>
                 )}
 
                 <rect
-                  x="200"
-                  y="220"
-                  width="150"
-                  height="40"
+                  x={branchBoxes.ik.x}
+                  y={branchBoxes.ik.y}
+                  width={impedanceBoxSize.width}
+                  height={impedanceBoxSize.height}
                   fill="white"
                   stroke="#000000"
                   strokeWidth="1"
                   rx="4"
                 />
                 <text
-                  x="275"
-                  y="235"
+                  x={branchMidpoints.ik.x}
+                  y={branchBoxes.ik.y + 18}
                   className="text-xs font-semibold fill-black"
                   textAnchor="middle"
                 >
                   Z(i-k)
                 </text>
                 <text
-                  x="275"
-                  y="252"
+                  x={branchMidpoints.ik.x}
+                  y={branchBoxes.ik.y + 34}
                   className="text-xs fill-black"
                   textAnchor="middle"
                 >
@@ -919,26 +1068,26 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                 </text>
 
                 <rect
-                  x="600"
-                  y="220"
-                  width="150"
-                  height="40"
+                  x={branchBoxes.jk.x}
+                  y={branchBoxes.jk.y}
+                  width={impedanceBoxSize.width}
+                  height={impedanceBoxSize.height}
                   fill="white"
                   stroke="#000000"
                   strokeWidth="1"
                   rx="4"
                 />
                 <text
-                  x="675"
-                  y="235"
+                  x={branchMidpoints.jk.x}
+                  y={branchBoxes.jk.y + 18}
                   className="text-xs font-semibold fill-black"
                   textAnchor="middle"
                 >
                   Z(j-k)
                 </text>
                 <text
-                  x="675"
-                  y="252"
+                  x={branchMidpoints.jk.x}
+                  y={branchBoxes.jk.y + 34}
                   className="text-xs fill-black"
                   textAnchor="middle"
                 >
@@ -947,26 +1096,26 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                 </text>
 
                 <rect
-                  x="425"
-                  y="460"
-                  width="150"
-                  height="40"
+                  x={branchBoxes.ij.x}
+                  y={branchBoxes.ij.y}
+                  width={impedanceBoxSize.width}
+                  height={impedanceBoxSize.height}
                   fill="white"
                   stroke="#000000"
                   strokeWidth="1"
                   rx="4"
                 />
                 <text
-                  x="500"
-                  y="475"
+                  x={branchMidpoints.ij.x}
+                  y={branchBoxes.ij.y + 18}
                   className="text-xs font-semibold fill-black"
                   textAnchor="middle"
                 >
                   Z(i-j)
                 </text>
                 <text
-                  x="500"
-                  y="492"
+                  x={branchMidpoints.ij.x}
+                  y={branchBoxes.ij.y + 34}
                   className="text-xs fill-black"
                   textAnchor="middle"
                 >
@@ -975,36 +1124,58 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                 </text>
 
                 <text
-                  x="275"
-                  y="200"
+                  x={branchMidpoints.ik.x + currentLabelOffsets.ik.x}
+                  y={branchMidpoints.ik.y + currentLabelOffsets.ik.y}
                   className="text-sm font-bold"
                   fill="#16a34a"
                   textAnchor="middle"
                 >
-                  {params.Vi === params.Vk && params.angleVi === params.angleVk ? "" : params.Vi > params.Vk || (params.Vi === params.Vk && params.angleVi > params.angleVk) ? "I(i→k)" : "I(k→i)"}
+                  {params.Vi === params.Vk && params.angleVi === params.angleVk
+                    ? ""
+                    : params.Vi > params.Vk ||
+                      (params.Vi === params.Vk &&
+                        params.angleVi > params.angleVk)
+                    ? "I(i→k)"
+                    : "I(k→i)"}
                 </text>
 
                 <text
-                  x="675"
-                  y="200"
+                  x={branchMidpoints.jk.x + currentLabelOffsets.jk.x}
+                  y={branchMidpoints.jk.y + currentLabelOffsets.jk.y}
                   className="text-sm font-bold"
                   fill="#16a34a"
                   textAnchor="middle"
                 >
-                  {params.Vj === params.Vk && params.angleVj === params.angleVk ? "" : params.Vj > params.Vk || (params.Vj === params.Vk && params.angleVj > params.angleVk) ? "I(j→k)" : "I(k→j)"}
+                  {params.Vj === params.Vk && params.angleVj === params.angleVk
+                    ? ""
+                    : params.Vj > params.Vk ||
+                      (params.Vj === params.Vk &&
+                        params.angleVj > params.angleVk)
+                    ? "I(j→k)"
+                    : "I(k→j)"}
                 </text>
 
                 <text
-                  x="500"
-                  y="440"
+                  x={branchMidpoints.ij.x + currentLabelOffsets.ij.x}
+                  y={branchMidpoints.ij.y + currentLabelOffsets.ij.y}
                   className="text-sm font-bold"
                   fill="#16a34a"
                   textAnchor="middle"
                 >
-                  {params.Vi === params.Vj && params.angleVi === params.angleVj ? "" : params.Vi > params.Vj || (params.Vi === params.Vj && params.angleVi > params.angleVj) ? "I(i→j)" : "I(j→i)"}
+                  {params.Vi === params.Vj && params.angleVi === params.angleVj
+                    ? ""
+                    : params.Vi > params.Vj ||
+                      (params.Vi === params.Vj &&
+                        params.angleVi > params.angleVj)
+                    ? "I(i→j)"
+                    : "I(j→i)"}
                 </text>
 
-                <g transform="translate(200, 300)">
+                <g
+                  transform={`translate(${
+                    branchMidpoints.ik.x + phasorOffsets.ik.x
+                  }, ${branchMidpoints.ik.y + phasorOffsets.ik.y})`}
+                >
                   <PhasorPair
                     angleA={params.angleVi}
                     angleB={params.angleVk}
@@ -1018,7 +1189,11 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                   />
                 </g>
 
-                <g transform="translate(750, 300)">
+                <g
+                  transform={`translate(${
+                    branchMidpoints.jk.x + phasorOffsets.jk.x
+                  }, ${branchMidpoints.jk.y + phasorOffsets.jk.y})`}
+                >
                   <PhasorPair
                     angleA={params.angleVj}
                     angleB={params.angleVk}
@@ -1032,7 +1207,11 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                   />
                 </g>
 
-                <g transform="translate(500, 520)">
+                <g
+                  transform={`translate(${
+                    branchMidpoints.ij.x + phasorOffsets.ij.x
+                  }, ${branchMidpoints.ij.y + phasorOffsets.ij.y})`}
+                >
                   <PhasorPair
                     angleA={params.angleVj}
                     angleB={params.angleVi}
@@ -1047,24 +1226,24 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                 </g>
 
                 <text
-                  x="130"
-                  y="430"
+                  x={nodePositions.i.x}
+                  y={nodePositions.i.y - 8}
                   className="text-lg font-bold fill-black"
                   textAnchor="middle"
                 >
                   Barra i
                 </text>
                 <text
-                  x="870"
-                  y="430"
+                  x={nodePositions.j.x}
+                  y={nodePositions.j.y - 8}
                   className="text-lg font-bold fill-black"
                   textAnchor="middle"
                 >
                   Barra j
                 </text>
                 <text
-                  x="500"
-                  y="85"
+                  x={nodePositions.k.x}
+                  y={nodePositions.k.y - 8}
                   className="text-lg font-bold fill-black"
                   textAnchor="middle"
                 >
@@ -1072,28 +1251,28 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                 </text>
 
                 <text
-                  x="130"
-                  y="410"
+                  x={nodePositions.i.x}
+                  y={nodePositions.i.y - 18}
                   className="text-sm font-medium fill-black"
                   textAnchor="middle"
                 >
-                  Vi = {params.Vi} kV
+                  Vi = {params.Vi}∠{params.angleVi}° kV
                 </text>
                 <text
-                  x="870"
-                  y="410"
+                  x={nodePositions.j.x}
+                  y={nodePositions.j.y - 18}
                   className="text-sm font-medium fill-black"
                   textAnchor="middle"
                 >
-                  Vj = {params.Vj} kV
+                  Vj = {params.Vj}∠{params.angleVj}° kV
                 </text>
                 <text
-                  x="500"
-                  y="65"
+                  x={nodePositions.k.x}
+                  y={nodePositions.k.y - 18}
                   className="text-sm font-medium fill-black"
                   textAnchor="middle"
                 >
-                  Vk = {params.Vk} kV
+                  Vk = {params.Vk}∠{params.angleVk}° kV
                 </text>
               </svg>
             </div>

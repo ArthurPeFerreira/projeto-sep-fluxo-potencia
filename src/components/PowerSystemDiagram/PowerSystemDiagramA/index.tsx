@@ -13,7 +13,7 @@ import GroundIcon from "../GroundIcon";
 import PhasorPair from "../PhasorPair";
 import { powerSystemSchemaA } from "./schema";
 import { PowerSystemParamsA, PowerSystemDiagramAProps } from "./types";
-import { getComplexFromRectangular, getComplexFromPolar } from "./utils";
+import { getComplexFromRectangular, getComplexFromPolar } from "../utils";
 import { useImpedanceFormat } from "../ImpedanceFormatContext";
 import {
   calculatePowerFlow,
@@ -214,6 +214,8 @@ export const PowerSystemDiagramA: React.FC<PowerSystemDiagramAProps> = ({
     setPolarMagnitude(magnitudeDecimal.toDecimalPlaces(2).toString());
     setPolarAngle(angleDecimal.toDecimalPlaces(2).toString());
   }, []);
+
+  const currentFlowParticleRadius = 2.5;
 
   return (
     <div className={`flex gap-6 w-full h-fit ${className}`}>
@@ -496,7 +498,7 @@ export const PowerSystemDiagramA: React.FC<PowerSystemDiagramAProps> = ({
                         <circle
                           cx="0"
                           cy="0"
-                          r="3"
+                          r={currentFlowParticleRadius}
                           fill="#16a34a"
                           opacity="0.8"
                         >
@@ -510,7 +512,7 @@ export const PowerSystemDiagramA: React.FC<PowerSystemDiagramAProps> = ({
                         <circle
                           cx="0"
                           cy="0"
-                          r="3"
+                          r={currentFlowParticleRadius}
                           fill="#16a34a"
                           opacity="0.8"
                         >
@@ -524,7 +526,7 @@ export const PowerSystemDiagramA: React.FC<PowerSystemDiagramAProps> = ({
                         <circle
                           cx="0"
                           cy="0"
-                          r="3"
+                          r={currentFlowParticleRadius}
                           fill="#16a34a"
                           opacity="0.8"
                         >
@@ -554,7 +556,7 @@ export const PowerSystemDiagramA: React.FC<PowerSystemDiagramAProps> = ({
                         <circle
                           cx="0"
                           cy="0"
-                          r="3"
+                          r={currentFlowParticleRadius}
                           fill="#16a34a"
                           opacity="0.8"
                         >
@@ -568,7 +570,7 @@ export const PowerSystemDiagramA: React.FC<PowerSystemDiagramAProps> = ({
                         <circle
                           cx="0"
                           cy="0"
-                          r="3"
+                          r={currentFlowParticleRadius}
                           fill="#16a34a"
                           opacity="0.8"
                         >
@@ -582,7 +584,7 @@ export const PowerSystemDiagramA: React.FC<PowerSystemDiagramAProps> = ({
                         <circle
                           cx="0"
                           cy="0"
-                          r="3"
+                          r={currentFlowParticleRadius}
                           fill="#16a34a"
                           opacity="0.8"
                         >
@@ -678,7 +680,7 @@ export const PowerSystemDiagramA: React.FC<PowerSystemDiagramAProps> = ({
                   className="text-sm font-medium fill-black"
                   textAnchor="middle"
                 >
-                  Vi = {params.Vi} kV
+                  Vi = {params.Vi}∠{params.angleVi}° kV
                 </text>
                 <text
                   x="650"
@@ -686,7 +688,7 @@ export const PowerSystemDiagramA: React.FC<PowerSystemDiagramAProps> = ({
                   className="text-sm font-medium fill-black"
                   textAnchor="middle"
                 >
-                  Vj = {params.Vj} kV
+                  Vj = {params.Vj}∠{params.angleVj}° kV
                 </text>
 
                 <g transform="translate(400, 150)">

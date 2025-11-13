@@ -1,4 +1,7 @@
 import Decimal from "decimal.js";
+import { PI } from "@/lib/constants";
+import { getComplexFromPolar } from "../utils";
+import Complex from "complex.js";
 
 export interface PowerSystemParamsDecimalB {
   Vi: Decimal;
@@ -67,8 +70,6 @@ export const calculatePowerFlowB = (
   const denominatorIk = zR_ik.pow(2).plus(zX_ik.pow(2));
   const denominatorJk = zR_jk.pow(2).plus(zX_jk.pow(2));
   const denominatorIj = zR_ij.pow(2).plus(zX_ij.pow(2));
-
-  const PI = new Decimal(Math.PI);
 
   const thetaIjRadians = angleVi.minus(angleVj).times(PI).dividedBy(180);
   const thetaIkRadians = angleVi.minus(angleVk).times(PI).dividedBy(180);
