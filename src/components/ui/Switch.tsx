@@ -13,7 +13,7 @@ interface SwitchProps
 
 export function Switch({ className, label, id, ...props }: SwitchProps) {
   const generatedId = useId();
-  const switchId = id || generatedId;
+  const switchId = label || id ? id || generatedId : undefined;
 
   return (
     <div className="flex flex-row gap-2 items-center">

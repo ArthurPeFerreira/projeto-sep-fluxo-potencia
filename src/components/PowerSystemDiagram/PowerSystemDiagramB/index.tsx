@@ -17,7 +17,6 @@ import { getComplexFromRectangular, getComplexFromPolar } from "../utils";
 import {
   calculatePowerFlowB,
   PowerFlowResultsB,
-  ResultRowB,
   PowerSystemParamsDecimalB,
 } from "./calculations";
 import { Table } from "@/components/ui/Table";
@@ -170,188 +169,318 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
     setIsLoading(true);
     setInputData(data);
 
-    setTimeout(() => {
-      const decimalData: PowerSystemParamsDecimalB = {
-        Vi: new Decimal(data.Vi),
-        Vj: new Decimal(data.Vj),
-        Vk: new Decimal(data.Vk),
-        angleVi: new Decimal(data.angleVi),
-        angleVj: new Decimal(data.angleVj),
-        angleVk: new Decimal(data.angleVk),
-        zR_ik: new Decimal(data.zR_ik),
-        zX_ik: new Decimal(data.zX_ik),
-        zR_jk: new Decimal(data.zR_jk),
-        zX_jk: new Decimal(data.zX_jk),
-        zR_ij: new Decimal(data.zR_ij),
-        zX_ij: new Decimal(data.zX_ij),
-      };
+    const decimalData: PowerSystemParamsDecimalB = {
+      Vi: new Decimal(data.Vi),
+      Vj: new Decimal(data.Vj),
+      Vk: new Decimal(data.Vk),
+      angleVi: new Decimal(data.angleVi),
+      angleVj: new Decimal(data.angleVj),
+      angleVk: new Decimal(data.angleVk),
+      zR_ik: new Decimal(data.zR_ik),
+      zX_ik: new Decimal(data.zX_ik),
+      zR_jk: new Decimal(data.zR_jk),
+      zX_jk: new Decimal(data.zX_jk),
+      zR_ij: new Decimal(data.zR_ij),
+      zX_ij: new Decimal(data.zX_ij),
+    };
 
-      const calculatedResults = calculatePowerFlowB(decimalData);
-      setResults(calculatedResults);
-      setIsLoading(false);
-      setIsModalOpen(true);
-    }, 1500);
+    const calculatedResults = calculatePowerFlowB(decimalData);
+    setResults(calculatedResults);
+    setIsLoading(false);
+    setIsModalOpen(true);
   };
 
-  const tableData: ResultRowB[] = React.useMemo(() => {
+  interface TableRowB {
+    parametro1: string;
+    valor1: string;
+    unidade1: string;
+    parametro2: string;
+    valor2: string;
+    unidade2: string;
+    parametro3: string;
+    valor3: string;
+    unidade3: string;
+  }
+
+  const tableData: TableRowB[] = React.useMemo(() => {
     if (!inputData || !results) return [];
 
-    return [
-      {
-        parametro: "Vi",
-        valor: `${inputData.Vi}∠${inputData.angleVi}°`,
-        unidade: "kV",
-      },
-      {
-        parametro: "Vj",
-        valor: `${inputData.Vj}∠${inputData.angleVj}°`,
-        unidade: "kV",
-      },
-      {
-        parametro: "Vk",
-        valor: `${inputData.Vk}∠${inputData.angleVk}°`,
-        unidade: "kV",
-      },
-      {
-        parametro: "Pij",
-        valor: results.Pij.toDecimalPlaces(10).toString(),
-        unidade: "MW",
-      },
-      {
-        parametro: "Pji",
-        valor: results.Pji.toDecimalPlaces(10).toString(),
-        unidade: "MW",
-      },
-      {
-        parametro: "ΔPij",
-        valor: results.deltaPij.toDecimalPlaces(10).toString(),
-        unidade: "MW",
-      },
-      {
-        parametro: "Pik",
-        valor: results.Pik.toDecimalPlaces(10).toString(),
-        unidade: "MW",
-      },
-      {
-        parametro: "Pki",
-        valor: results.Pki.toDecimalPlaces(10).toString(),
-        unidade: "MW",
-      },
-      {
-        parametro: "ΔPik",
-        valor: results.deltaPik.toDecimalPlaces(10).toString(),
-        unidade: "MW",
-      },
-      {
-        parametro: "Pjk",
-        valor: results.Pjk.toDecimalPlaces(10).toString(),
-        unidade: "MW",
-      },
-      {
-        parametro: "Pkj",
-        valor: results.Pkj.toDecimalPlaces(10).toString(),
-        unidade: "MW",
-      },
-      {
-        parametro: "ΔPjk",
-        valor: results.deltaPjk.toDecimalPlaces(10).toString(),
-        unidade: "MW",
-      },
-      {
-        parametro: "Qij",
-        valor: results.Qij.toDecimalPlaces(10).toString(),
-        unidade: "MVAr",
-      },
-      {
-        parametro: "Qji",
-        valor: results.Qji.toDecimalPlaces(10).toString(),
-        unidade: "MVAr",
-      },
-      {
-        parametro: "ΔQij",
-        valor: results.deltaQij.toDecimalPlaces(10).toString(),
-        unidade: "MVAr",
-      },
-      {
-        parametro: "Qik",
-        valor: results.Qik.toDecimalPlaces(10).toString(),
-        unidade: "MVAr",
-      },
-      {
-        parametro: "Qki",
-        valor: results.Qki.toDecimalPlaces(10).toString(),
-        unidade: "MVAr",
-      },
-      {
-        parametro: "ΔQik",
-        valor: results.deltaQik.toDecimalPlaces(10).toString(),
-        unidade: "MVAr",
-      },
-      {
-        parametro: "Qjk",
-        valor: results.Qjk.toDecimalPlaces(10).toString(),
-        unidade: "MVAr",
-      },
-      {
-        parametro: "Qkj",
-        valor: results.Qkj.toDecimalPlaces(10).toString(),
-        unidade: "MVAr",
-      },
-      {
-        parametro: "ΔQjk",
-        valor: results.deltaQjk.toDecimalPlaces(10).toString(),
-        unidade: "MVAr",
-      },
+    const groups = [
+      [
+        {
+          parametro: "Pij",
+          valor: results.Pij.toDecimalPlaces(10).toString(),
+          unidade: "MW",
+        },
+        {
+          parametro: "Pji",
+          valor: results.Pji.toDecimalPlaces(10).toString(),
+          unidade: "MW",
+        },
+        {
+          parametro: "ΔPij",
+          valor: results.deltaPij.toDecimalPlaces(10).toString(),
+          unidade: "MW",
+        },
+      ],
+      [
+        {
+          parametro: "Qij",
+          valor: results.Qij.toDecimalPlaces(10).toString(),
+          unidade: "MVAr",
+        },
+        {
+          parametro: "Qji",
+          valor: results.Qji.toDecimalPlaces(10).toString(),
+          unidade: "MVAr",
+        },
+        {
+          parametro: "ΔQij",
+          valor: results.deltaQij.toDecimalPlaces(10).toString(),
+          unidade: "MVAr",
+        },
+      ],
+      [
+        {
+          parametro: "Pik",
+          valor: results.Pik.toDecimalPlaces(10).toString(),
+          unidade: "MW",
+        },
+        {
+          parametro: "Pki",
+          valor: results.Pki.toDecimalPlaces(10).toString(),
+          unidade: "MW",
+        },
+        {
+          parametro: "ΔPik",
+          valor: results.deltaPik.toDecimalPlaces(10).toString(),
+          unidade: "MW",
+        },
+      ],
+      [
+        {
+          parametro: "Qik",
+          valor: results.Qik.toDecimalPlaces(10).toString(),
+          unidade: "MVAr",
+        },
+        {
+          parametro: "Qki",
+          valor: results.Qki.toDecimalPlaces(10).toString(),
+          unidade: "MVAr",
+        },
+        {
+          parametro: "ΔQik",
+          valor: results.deltaQik.toDecimalPlaces(10).toString(),
+          unidade: "MVAr",
+        },
+      ],
+      [
+        {
+          parametro: "Pjk",
+          valor: results.Pjk.toDecimalPlaces(10).toString(),
+          unidade: "MW",
+        },
+        {
+          parametro: "Pkj",
+          valor: results.Pkj.toDecimalPlaces(10).toString(),
+          unidade: "MW",
+        },
+        {
+          parametro: "ΔPjk",
+          valor: results.deltaPjk.toDecimalPlaces(10).toString(),
+          unidade: "MW",
+        },
+      ],
+      [
+        {
+          parametro: "Qjk",
+          valor: results.Qjk.toDecimalPlaces(10).toString(),
+          unidade: "MVAr",
+        },
+        {
+          parametro: "Qkj",
+          valor: results.Qkj.toDecimalPlaces(10).toString(),
+          unidade: "MVAr",
+        },
+        {
+          parametro: "ΔQjk",
+          valor: results.deltaQjk.toDecimalPlaces(10).toString(),
+          unidade: "MVAr",
+        },
+      ],
     ];
+
+    const rows: TableRowB[] = [];
+
+    for (const group of groups) {
+      const item1 = group[0] || { parametro: "", valor: "", unidade: "" };
+      const item2 = group[1] || { parametro: "", valor: "", unidade: "" };
+      const item3 = group[2] || { parametro: "", valor: "", unidade: "" };
+
+      rows.push({
+        parametro1: item1.parametro,
+        valor1: item1.valor,
+        unidade1: item1.unidade,
+        parametro2: item2.parametro,
+        valor2: item2.valor,
+        unidade2: item2.unidade,
+        parametro3: item3.parametro,
+        valor3: item3.valor,
+        unidade3: item3.unidade,
+      });
+    }
+
+    return rows;
   }, [inputData, results]);
 
   const tableColumns = [
     {
-      key: "parametro" as keyof ResultRowB,
+      key: "parametro1" as keyof TableRowB,
       title: "Parâmetro",
       width: "auto",
       align: "center" as const,
       sortable: false,
       searchable: false,
-      render: (value: any) => (
-        <span className="font-semibold">{String(value)}</span>
-      ),
+      render: (value: any, row: TableRowB) => {
+        if (row.parametro1 === "separator") {
+          return (
+            <div className="relative -mx-4">
+              <div
+                className="absolute left-0 right-0 top-0 h-px bg-gray-300"
+                style={{ left: "-100vw", right: "-100vw", width: "200vw" }}
+              ></div>
+            </div>
+          );
+        }
+        return <span className="font-semibold">{String(value) || ""}</span>;
+      },
     },
     {
-      key: "valor" as keyof ResultRowB,
+      key: "valor1" as keyof TableRowB,
       title: "Valor",
       width: "auto",
       align: "center" as const,
       sortable: false,
       searchable: false,
-      render: (value: any, row: ResultRowB) => (
-        <span className={row.parametro.startsWith("Δ") ? "font-bold" : ""}>
-          {String(value)}
-        </span>
-      ),
+      render: (value: any, row: TableRowB) => {
+        if (row.parametro1 === "separator") return null;
+        return (
+          <span className={row.parametro1.startsWith("Δ") ? "font-bold" : ""}>
+            {String(value) || ""}
+          </span>
+        );
+      },
     },
     {
-      key: "unidade" as keyof ResultRowB,
+      key: "unidade1" as keyof TableRowB,
       title: "Unidade",
       width: "auto",
       align: "center" as const,
       sortable: false,
       searchable: false,
-      render: (value: any) => (
-        <span className="text-muted-foreground">{String(value)}</span>
-      ),
+      render: (value: any, row: TableRowB) => {
+        if (row.parametro1 === "separator") return null;
+        return (
+          <span className="text-muted-foreground">{String(value) || ""}</span>
+        );
+      },
+    },
+    {
+      key: "parametro2" as keyof TableRowB,
+      title: "Parâmetro",
+      width: "auto",
+      align: "center" as const,
+      sortable: false,
+      searchable: false,
+      render: (value: any, row: TableRowB) => {
+        if (row.parametro1 === "separator") return null;
+        return <span className="font-semibold">{String(value) || ""}</span>;
+      },
+    },
+    {
+      key: "valor2" as keyof TableRowB,
+      title: "Valor",
+      width: "auto",
+      align: "center" as const,
+      sortable: false,
+      searchable: false,
+      render: (value: any, row: TableRowB) => {
+        if (row.parametro1 === "separator") return null;
+        return (
+          <span className={row.parametro2.startsWith("Δ") ? "font-bold" : ""}>
+            {String(value) || ""}
+          </span>
+        );
+      },
+    },
+    {
+      key: "unidade2" as keyof TableRowB,
+      title: "Unidade",
+      width: "auto",
+      align: "center" as const,
+      sortable: false,
+      searchable: false,
+      render: (value: any, row: TableRowB) => {
+        if (row.parametro1 === "separator") return null;
+        return (
+          <span className="text-muted-foreground">{String(value) || ""}</span>
+        );
+      },
+    },
+    {
+      key: "parametro3" as keyof TableRowB,
+      title: "Parâmetro",
+      width: "auto",
+      align: "center" as const,
+      sortable: false,
+      searchable: false,
+      render: (value: any, row: TableRowB) => {
+        if (row.parametro1 === "separator") return null;
+        return <span className="font-semibold">{String(value) || ""}</span>;
+      },
+    },
+    {
+      key: "valor3" as keyof TableRowB,
+      title: "Valor",
+      width: "auto",
+      align: "center" as const,
+      sortable: false,
+      searchable: false,
+      render: (value: any, row: TableRowB) => {
+        if (row.parametro1 === "separator") return null;
+        return (
+          <span className={row.parametro3.startsWith("Δ") ? "font-bold" : ""}>
+            {String(value) || ""}
+          </span>
+        );
+      },
+    },
+    {
+      key: "unidade3" as keyof TableRowB,
+      title: "Unidade",
+      width: "auto",
+      align: "center" as const,
+      sortable: false,
+      searchable: false,
+      render: (value: any, row: TableRowB) => {
+        if (row.parametro1 === "separator") return null;
+        return (
+          <span className="text-muted-foreground">{String(value) || ""}</span>
+        );
+      },
     },
   ];
 
   const nodePositions = {
-    i: { x: 220, y: 470 },
-    j: { x: 780, y: 470 },
+    i: { x: 190, y: 470 },
+    j: { x: 810, y: 470 },
     k: { x: 500, y: 160 },
   };
 
   const busHalfWidth = 50;
   const topBusHalfWidth = 50;
   const topConnectionOffset = 22;
+  const busConnectionOffset = 22;
 
   const busSegments = {
     i: {
@@ -384,13 +513,28 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
     },
   };
 
+  const busConnections = {
+    i: {
+      ik: {
+        x: busSegments.i.end.x - busConnectionOffset,
+        y: busSegments.i.end.y,
+      },
+    },
+    j: {
+      jk: {
+        x: busSegments.j.start.x + busConnectionOffset,
+        y: busSegments.j.start.y,
+      },
+    },
+  };
+
   const branchSegments = {
     ik: {
-      start: { x: busSegments.i.end.x, y: busSegments.i.end.y },
+      start: busConnections.i.ik,
       end: topConnections.left,
     },
     jk: {
-      start: { x: busSegments.j.start.x, y: busSegments.j.start.y },
+      start: busConnections.j.jk,
       end: topConnections.right,
     },
     ij: {
@@ -418,22 +562,22 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
   const branchBoxes = {
     ik: {
       x: branchMidpoints.ik.x - impedanceBoxSize.width / 2,
-      y: branchMidpoints.ik.y + 40,
+      y: branchMidpoints.ik.y - impedanceBoxSize.height / 2,
     },
     jk: {
       x: branchMidpoints.jk.x - impedanceBoxSize.width / 2,
-      y: branchMidpoints.jk.y + 40,
+      y: branchMidpoints.jk.y - impedanceBoxSize.height / 2,
     },
     ij: {
       x: branchMidpoints.ij.x - impedanceBoxSize.width / 2,
-      y: branchMidpoints.ij.y + 40,
+      y: branchMidpoints.ij.y - impedanceBoxSize.height / 2,
     },
   };
 
   const currentLabelOffsets = {
-    ik: { x: -15, y: 10 },
-    jk: { x: 15, y: 10 },
-    ij: { x: 0, y: -35 },
+    ik: { x: -15, y: -30 },
+    jk: { x: 15, y: -30 },
+    ij: { x: 0, y: -30 },
   };
 
   const groundPositions = {
@@ -452,15 +596,18 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
   };
 
   const flowOffsets = {
-    ik: { x: 0, y: 3 },
-    jk: { x: 0, y: 3 },
-    ij: { x: 0, y: 3 },
+    ik: { x: 0, y: 0 },
+    ki: { x: 0, y: 0 },
+    jk: { x: 0, y: 0 },
+    kj: { x: 0, y: 0 },
+    ij: { x: 0, y: 0 },
+    ji: { x: 0, y: 0 },
   };
 
   const phasorOffsets = {
-    ik: { x: -50, y: 10 },
-    jk: { x: 10, y: 10 },
-    ij: { x: -60, y: 20 },
+    ik: { x: -70, y: -120 },
+    jk: { x: 70, y: -120 },
+    ij: { x: 0, y: 110 },
   };
 
   useEffect(() => {
@@ -640,123 +787,216 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
             />
             <div className="space-y-4 col-span-2">
               <div className="space-y-2">
-                <p className="text-xs font-medium text-primary">Linha i-k:</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <Form.Item
-                    control={form.control}
-                    name="zR_ik"
-                    render={({ field }) => (
-                      <Input
-                        type="number"
-                        title="R (Ω)"
-                        value={field.value}
-                        onChange={(e: any) =>
-                          field.onChange(typeof e === "number" ? e : 0)
-                        }
-                        min={-1000}
-                        max={1000}
-                        step={0.1}
-                      />
-                    )}
-                  />
-                  <Form.Item
-                    control={form.control}
-                    name="zX_ik"
-                    render={({ field }) => (
-                      <Input
-                        type="number"
-                        title="X (Ω)"
-                        value={field.value}
-                        onChange={(e: any) =>
-                          field.onChange(typeof e === "number" ? e : 0)
-                        }
-                        min={-1000}
-                        max={1000}
-                        step={0.1}
-                      />
-                    )}
-                  />
-                </div>
+                <p className="text-xs font-medium text-primary">Linha i-j:</p>
+                {impedanceFormat === "rectangular" ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    <Form.Item
+                      control={form.control}
+                      name="zR_ij"
+                      render={({ field }) => (
+                        <Input
+                          type="number"
+                          title="R (Ω)"
+                          value={field.value}
+                          onChange={(e: any) =>
+                            field.onChange(typeof e === "number" ? e : 0)
+                          }
+                          min={-1000}
+                          max={1000}
+                          step={0.1}
+                        />
+                      )}
+                    />
+                    <Form.Item
+                      control={form.control}
+                      name="zX_ij"
+                      render={({ field }) => (
+                        <Input
+                          type="number"
+                          title="X (Ω)"
+                          value={field.value}
+                          onChange={(e: any) =>
+                            field.onChange(typeof e === "number" ? e : 0)
+                          }
+                          min={-1000}
+                          max={1000}
+                          step={0.1}
+                        />
+                      )}
+                    />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      type="number"
+                      title="|Z| (Ω)"
+                      value={polarMagnitudeIj}
+                      onChange={
+                        ((value: number) => {
+                          handlePolarMagnitudeChangeIj(value.toString());
+                        }) as any
+                      }
+                      min={0}
+                      max={10000}
+                      step={0.1}
+                    />
+                    <Input
+                      type="number"
+                      title="θ (graus)"
+                      value={polarAngleIj}
+                      onChange={
+                        ((value: number) => {
+                          handlePolarAngleChangeIj(value.toString());
+                        }) as any
+                      }
+                      min={-180}
+                      max={180}
+                      step={0.1}
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
                 <p className="text-xs font-medium text-primary">Linha j-k:</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <Form.Item
-                    control={form.control}
-                    name="zR_jk"
-                    render={({ field }) => (
-                      <Input
-                        type="number"
-                        title="R (Ω)"
-                        value={field.value}
-                        onChange={(e: any) =>
-                          field.onChange(typeof e === "number" ? e : 0)
-                        }
-                        min={-1000}
-                        max={1000}
-                        step={0.1}
-                      />
-                    )}
-                  />
-                  <Form.Item
-                    control={form.control}
-                    name="zX_jk"
-                    render={({ field }) => (
-                      <Input
-                        type="number"
-                        title="X (Ω)"
-                        value={field.value}
-                        onChange={(e: any) =>
-                          field.onChange(typeof e === "number" ? e : 0)
-                        }
-                        min={-1000}
-                        max={1000}
-                        step={0.1}
-                      />
-                    )}
-                  />
-                </div>
+                {impedanceFormat === "rectangular" ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    <Form.Item
+                      control={form.control}
+                      name="zR_jk"
+                      render={({ field }) => (
+                        <Input
+                          type="number"
+                          title="R (Ω)"
+                          value={field.value}
+                          onChange={(e: any) =>
+                            field.onChange(typeof e === "number" ? e : 0)
+                          }
+                          min={-1000}
+                          max={1000}
+                          step={0.1}
+                        />
+                      )}
+                    />
+                    <Form.Item
+                      control={form.control}
+                      name="zX_jk"
+                      render={({ field }) => (
+                        <Input
+                          type="number"
+                          title="X (Ω)"
+                          value={field.value}
+                          onChange={(e: any) =>
+                            field.onChange(typeof e === "number" ? e : 0)
+                          }
+                          min={-1000}
+                          max={1000}
+                          step={0.1}
+                        />
+                      )}
+                    />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      type="number"
+                      title="|Z| (Ω)"
+                      value={polarMagnitudeJk}
+                      onChange={
+                        ((value: number) => {
+                          handlePolarMagnitudeChangeJk(value.toString());
+                        }) as any
+                      }
+                      min={0}
+                      max={10000}
+                      step={0.1}
+                    />
+                    <Input
+                      type="number"
+                      title="θ (graus)"
+                      value={polarAngleJk}
+                      onChange={
+                        ((value: number) => {
+                          handlePolarAngleChangeJk(value.toString());
+                        }) as any
+                      }
+                      min={-180}
+                      max={180}
+                      step={0.1}
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
-                <p className="text-xs font-medium text-primary">Linha i-j:</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <Form.Item
-                    control={form.control}
-                    name="zR_ij"
-                    render={({ field }) => (
-                      <Input
-                        type="number"
-                        title="R (Ω)"
-                        value={field.value}
-                        onChange={(e: any) =>
-                          field.onChange(typeof e === "number" ? e : 0)
-                        }
-                        min={-1000}
-                        max={1000}
-                        step={0.1}
-                      />
-                    )}
-                  />
-                  <Form.Item
-                    control={form.control}
-                    name="zX_ij"
-                    render={({ field }) => (
-                      <Input
-                        type="number"
-                        title="X (Ω)"
-                        value={field.value}
-                        onChange={(e: any) =>
-                          field.onChange(typeof e === "number" ? e : 0)
-                        }
-                        min={-1000}
-                        max={1000}
-                        step={0.1}
-                      />
-                    )}
-                  />
-                </div>
+                <p className="text-xs font-medium text-primary">Linha i-k:</p>
+                {impedanceFormat === "rectangular" ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    <Form.Item
+                      control={form.control}
+                      name="zR_ik"
+                      render={({ field }) => (
+                        <Input
+                          type="number"
+                          title="R (Ω)"
+                          value={field.value}
+                          onChange={(e: any) =>
+                            field.onChange(typeof e === "number" ? e : 0)
+                          }
+                          min={-1000}
+                          max={1000}
+                          step={0.1}
+                        />
+                      )}
+                    />
+                    <Form.Item
+                      control={form.control}
+                      name="zX_ik"
+                      render={({ field }) => (
+                        <Input
+                          type="number"
+                          title="X (Ω)"
+                          value={field.value}
+                          onChange={(e: any) =>
+                            field.onChange(typeof e === "number" ? e : 0)
+                          }
+                          min={-1000}
+                          max={1000}
+                          step={0.1}
+                        />
+                      )}
+                    />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      type="number"
+                      title="|Z| (Ω)"
+                      value={polarMagnitudeIk}
+                      onChange={
+                        ((value: number) => {
+                          handlePolarMagnitudeChangeIk(value.toString());
+                        }) as any
+                      }
+                      min={0}
+                      max={10000}
+                      step={0.1}
+                    />
+                    <Input
+                      type="number"
+                      title="θ (graus)"
+                      value={polarAngleIk}
+                      onChange={
+                        ((value: number) => {
+                          handlePolarAngleChangeIk(value.toString());
+                        }) as any
+                      }
+                      min={-180}
+                      max={180}
+                      step={0.1}
+                    />
+                  </div>
+                )}
               </div>
             </div>
             <Button
@@ -778,11 +1018,11 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
       </Card.Root>
 
       <div className="flex-1 items-start">
-        <Card.Root className="w-full h-[890px] bg-white">
+        <Card.Root className="w-full h-[770px] bg-white">
           <Card.Content className="p-2 h-fit flex flex-col overflow-hidden">
             <div className="w-full h-full overflow-hidden">
               <svg
-                viewBox="0 0 1000 650"
+                viewBox="0 100 970 650"
                 className="w-fit h-fit"
                 preserveAspectRatio="xMidYMid meet"
                 xmlns="http://www.w3.org/2000/svg"
@@ -819,6 +1059,175 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                     <polygon points="0 0, 12 5, 0 10" fill="#16a34a" />
                   </marker>
                 </defs>
+
+                <line
+                  x1={branchSegments.ik.start.x}
+                  y1={branchSegments.ik.start.y}
+                  x2={branchSegments.ik.end.x}
+                  y2={branchSegments.ik.end.y}
+                  stroke="#000000"
+                  strokeWidth="3"
+                />
+                <line
+                  x1={branchSegments.jk.start.x}
+                  y1={branchSegments.jk.start.y}
+                  x2={branchSegments.jk.end.x}
+                  y2={branchSegments.jk.end.y}
+                  stroke="#000000"
+                  strokeWidth="3"
+                />
+                <line
+                  x1={branchSegments.ij.start.x}
+                  y1={branchSegments.ij.start.y}
+                  x2={branchSegments.ij.end.x}
+                  y2={branchSegments.ij.end.y}
+                  stroke="#000000"
+                  strokeWidth="3"
+                />
+
+                {params.Vi === params.Vk &&
+                params.angleVi === params.angleVk ? null : params.Vi >
+                    params.Vk ||
+                  (params.Vi === params.Vk &&
+                    params.angleVi > params.angleVk) ? (
+                  <>
+                    {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((delay, idx) => (
+                      <React.Fragment key={`flow-ik-${idx}`}>
+                        <circle
+                          cx="0"
+                          cy="0"
+                          r="3"
+                          fill="#16a34a"
+                          opacity="0.8"
+                        >
+                          <animateMotion
+                            path={branchPaths.ik}
+                            dur="10s"
+                            begin={`${delay}s`}
+                            repeatCount="indefinite"
+                          />
+                        </circle>
+                      </React.Fragment>
+                    ))}
+                  </>
+                ) : (
+                  <>
+                    {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((delay, idx) => (
+                      <React.Fragment key={`flow-ki-${idx}`}>
+                        <circle
+                          cx="0"
+                          cy="0"
+                          r="3"
+                          fill="#16a34a"
+                          opacity="0.8"
+                        >
+                          <animateMotion
+                            path={branchPaths.ki}
+                            dur="10s"
+                            begin={`${delay}s`}
+                            repeatCount="indefinite"
+                          />
+                        </circle>
+                      </React.Fragment>
+                    ))}
+                  </>
+                )}
+
+                {params.Vj === params.Vk &&
+                params.angleVj === params.angleVk ? null : params.Vj >
+                    params.Vk ||
+                  (params.Vj === params.Vk &&
+                    params.angleVj > params.angleVk) ? (
+                  <>
+                    {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((delay, idx) => (
+                      <React.Fragment key={`flow-jk-${idx}`}>
+                        <circle
+                          cx="0"
+                          cy="0"
+                          r="3"
+                          fill="#16a34a"
+                          opacity="0.8"
+                        >
+                          <animateMotion
+                            path={branchPaths.jk}
+                            dur="10s"
+                            begin={`${delay}s`}
+                            repeatCount="indefinite"
+                          />
+                        </circle>
+                      </React.Fragment>
+                    ))}
+                  </>
+                ) : (
+                  <>
+                    {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((delay, idx) => (
+                      <React.Fragment key={`flow-kj-${idx}`}>
+                        <circle
+                          cx="0"
+                          cy="0"
+                          r="3"
+                          fill="#16a34a"
+                          opacity="0.8"
+                        >
+                          <animateMotion
+                            path={branchPaths.kj}
+                            dur="10s"
+                            begin={`${delay}s`}
+                            repeatCount="indefinite"
+                          />
+                        </circle>
+                      </React.Fragment>
+                    ))}
+                  </>
+                )}
+
+                {params.Vi === params.Vj &&
+                params.angleVi === params.angleVj ? null : params.Vi >
+                    params.Vj ||
+                  (params.Vi === params.Vj &&
+                    params.angleVi > params.angleVj) ? (
+                  <>
+                    {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((delay, idx) => (
+                      <React.Fragment key={`flow-ij-${idx}`}>
+                        <circle
+                          cx="0"
+                          cy="0"
+                          r="3"
+                          fill="#16a34a"
+                          opacity="0.8"
+                        >
+                          <animateMotion
+                            path={branchPaths.ij}
+                            dur="10s"
+                            begin={`${delay}s`}
+                            repeatCount="indefinite"
+                          />
+                        </circle>
+                      </React.Fragment>
+                    ))}
+                  </>
+                ) : (
+                  <>
+                    {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((delay, idx) => (
+                      <React.Fragment key={`flow-ji-${idx}`}>
+                        <circle
+                          cx="0"
+                          cy="0"
+                          r="3"
+                          fill="#16a34a"
+                          opacity="0.8"
+                        >
+                          <animateMotion
+                            path={branchPaths.ji}
+                            dur="10s"
+                            begin={`${delay}s`}
+                            repeatCount="indefinite"
+                          />
+                        </circle>
+                      </React.Fragment>
+                    ))}
+                  </>
+                )}
 
                 <line
                   x1={busSegments.i.start.x}
@@ -861,183 +1270,6 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                   y={groundPositions.k.y}
                   direction="down"
                 />
-
-                <line
-                  x1={branchSegments.ik.start.x}
-                  y1={branchSegments.ik.start.y}
-                  x2={branchSegments.ik.end.x}
-                  y2={branchSegments.ik.end.y}
-                  stroke="#000000"
-                  strokeWidth="3"
-                />
-                <line
-                  x1={branchSegments.jk.start.x}
-                  y1={branchSegments.jk.start.y}
-                  x2={branchSegments.jk.end.x}
-                  y2={branchSegments.jk.end.y}
-                  stroke="#000000"
-                  strokeWidth="3"
-                />
-                <line
-                  x1={branchSegments.ij.start.x}
-                  y1={branchSegments.ij.start.y}
-                  x2={branchSegments.ij.end.x}
-                  y2={branchSegments.ij.end.y}
-                  stroke="#000000"
-                  strokeWidth="3"
-                />
-
-                {params.Vi === params.Vk &&
-                params.angleVi === params.angleVk ? null : params.Vi >
-                    params.Vk ||
-                  (params.Vi === params.Vk &&
-                    params.angleVi > params.angleVk) ? (
-                  <>
-                    {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((delay, idx) => (
-                      <React.Fragment key={`flow-ik-${idx}`}>
-                        <circle
-                          cx={flowOffsets.ik.x}
-                          cy={flowOffsets.ik.y}
-                          r="3"
-                          fill="#16a34a"
-                          opacity="0.8"
-                        >
-                          <animateMotion
-                            path={branchPaths.ik}
-                            dur="10s"
-                            begin={`${delay}s`}
-                            repeatCount="indefinite"
-                          />
-                        </circle>
-                      </React.Fragment>
-                    ))}
-                  </>
-                ) : (
-                  <>
-                    {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((delay, idx) => (
-                      <React.Fragment key={`flow-ki-${idx}`}>
-                        <circle
-                          cx={flowOffsets.ik.x}
-                          cy={flowOffsets.ik.y}
-                          r="3"
-                          fill="#16a34a"
-                          opacity="0.8"
-                        >
-                          <animateMotion
-                            path={branchPaths.ki}
-                            dur="10s"
-                            begin={`${delay}s`}
-                            repeatCount="indefinite"
-                          />
-                        </circle>
-                      </React.Fragment>
-                    ))}
-                  </>
-                )}
-
-                {params.Vj === params.Vk &&
-                params.angleVj === params.angleVk ? null : params.Vj >
-                    params.Vk ||
-                  (params.Vj === params.Vk &&
-                    params.angleVj > params.angleVk) ? (
-                  <>
-                    {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((delay, idx) => (
-                      <React.Fragment key={`flow-jk-${idx}`}>
-                        <circle
-                          cx={flowOffsets.jk.x}
-                          cy={flowOffsets.jk.y}
-                          r="3"
-                          fill="#16a34a"
-                          opacity="0.8"
-                        >
-                          <animateMotion
-                            path={branchPaths.jk}
-                            dur="10s"
-                            begin={`${delay}s`}
-                            repeatCount="indefinite"
-                          />
-                        </circle>
-                      </React.Fragment>
-                    ))}
-                  </>
-                ) : (
-                  <>
-                    {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((delay, idx) => (
-                      <React.Fragment key={`flow-kj-${idx}`}>
-                        <circle
-                          cx={flowOffsets.jk.x}
-                          cy={flowOffsets.jk.y}
-                          r="3"
-                          fill="#16a34a"
-                          opacity="0.8"
-                        >
-                          <animateMotion
-                            path={branchPaths.kj}
-                            dur="10s"
-                            begin={`${delay}s`}
-                            repeatCount="indefinite"
-                          />
-                        </circle>
-                      </React.Fragment>
-                    ))}
-                  </>
-                )}
-
-                {params.Vi === params.Vj &&
-                params.angleVi === params.angleVj ? null : params.Vi >
-                    params.Vj ||
-                  (params.Vi === params.Vj &&
-                    params.angleVi > params.angleVj) ? (
-                  <>
-                    {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((delay, idx) => (
-                      <React.Fragment key={`flow-ij-${idx}`}>
-                        <g
-                          transform={`translate(${flowOffsets.ij.x}, ${flowOffsets.ij.y})`}
-                        >
-                          <circle
-                            cx="0"
-                            cy="0"
-                            r="3"
-                            fill="#16a34a"
-                            opacity="0.8"
-                          >
-                            <animateMotion
-                              path={branchPaths.ij}
-                              dur="10s"
-                              begin={`${delay}s`}
-                              repeatCount="indefinite"
-                            />
-                          </circle>
-                        </g>
-                      </React.Fragment>
-                    ))}
-                  </>
-                ) : (
-                  <>
-                    {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((delay, idx) => (
-                      <React.Fragment key={`flow-ji-${idx}`}>
-                        <g
-                          transform={`translate(${flowOffsets.ij.x}, ${flowOffsets.ij.y})`}
-                        >
-                          <circle
-                            cx="0"
-                            cy="0"
-                            r="3"
-                            fill="#16a34a"
-                            opacity="0.8"
-                          >
-                            <animateMotion
-                              path={branchPaths.ji}
-                              dur="10s"
-                              begin={`${delay}s`}
-                              repeatCount="indefinite"
-                            />
-                          </circle>
-                        </g>
-                      </React.Fragment>
-                    ))}
-                  </>
-                )}
 
                 <rect
                   x={branchBoxes.ik.x}
@@ -1226,41 +1458,16 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                 </g>
 
                 <text
-                  x={nodePositions.i.x}
-                  y={nodePositions.i.y - 8}
-                  className="text-lg font-bold fill-black"
-                  textAnchor="middle"
-                >
-                  Barra i
-                </text>
-                <text
-                  x={nodePositions.j.x}
-                  y={nodePositions.j.y - 8}
-                  className="text-lg font-bold fill-black"
-                  textAnchor="middle"
-                >
-                  Barra j
-                </text>
-                <text
-                  x={nodePositions.k.x}
-                  y={nodePositions.k.y - 8}
-                  className="text-lg font-bold fill-black"
-                  textAnchor="middle"
-                >
-                  Barra k
-                </text>
-
-                <text
-                  x={nodePositions.i.x}
-                  y={nodePositions.i.y - 18}
+                  x={nodePositions.i.x - 10}
+                  y={nodePositions.i.y - 32}
                   className="text-sm font-medium fill-black"
                   textAnchor="middle"
                 >
                   Vi = {params.Vi}∠{params.angleVi}° kV
                 </text>
                 <text
-                  x={nodePositions.j.x}
-                  y={nodePositions.j.y - 18}
+                  x={nodePositions.j.x + 10}
+                  y={nodePositions.j.y - 32}
                   className="text-sm font-medium fill-black"
                   textAnchor="middle"
                 >
@@ -1268,11 +1475,36 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
                 </text>
                 <text
                   x={nodePositions.k.x}
-                  y={nodePositions.k.y - 18}
+                  y={nodePositions.k.y - 32}
                   className="text-sm font-medium fill-black"
                   textAnchor="middle"
                 >
                   Vk = {params.Vk}∠{params.angleVk}° kV
+                </text>
+
+                <text
+                  x={nodePositions.i.x - 10}
+                  y={nodePositions.i.y - 14}
+                  className="text-lg font-bold fill-black"
+                  textAnchor="middle"
+                >
+                  Barra i
+                </text>
+                <text
+                  x={nodePositions.j.x + 10}
+                  y={nodePositions.j.y - 14}
+                  className="text-lg font-bold fill-black"
+                  textAnchor="middle"
+                >
+                  Barra j
+                </text>
+                <text
+                  x={nodePositions.k.x}
+                  y={nodePositions.k.y - 14}
+                  className="text-lg font-bold fill-black"
+                  textAnchor="middle"
+                >
+                  Barra k
                 </text>
               </svg>
             </div>
@@ -1284,7 +1516,7 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
         isOpen={isModalOpen}
         setIsOpen={setIsModalOpen}
         onClose={() => setIsModalOpen(false)}
-        className="max-w-4xl w-[90vw] max-h-[90vh] overflow-y-auto"
+        className="max-w-7xl w-[95vw] max-h-[95vh] overflow-y-auto"
       >
         <Modal.Header>
           <h2 className="text-xl font-semibold">Resultados do Cálculo</h2>
@@ -1293,11 +1525,23 @@ export const PowerSystemDiagramB: React.FC<PowerSystemDiagramBProps> = ({
           <div className="space-y-4">
             {results && inputData && tableData.length > 0 && (
               <div className="space-y-4">
+                <style
+                  dangerouslySetInnerHTML={{
+                    __html: `
+                    .results-table th:nth-child(3),
+                    .results-table th:nth-child(6),
+                    .results-table td:nth-child(3),
+                    .results-table td:nth-child(6) {
+                      border-right: 1px solid #d1d5db !important;
+                    }
+                  `,
+                  }}
+                />
                 <Table.Root
                   columns={tableColumns}
                   data={tableData}
                   pagination={false}
-                  className="w-full"
+                  className="w-full results-table"
                 >
                   <Table.Header />
                   <Table.Rows />

@@ -98,108 +98,200 @@ export const PowerSystemDiagramA: React.FC<PowerSystemDiagramAProps> = ({
     setIsLoading(true);
     setInputData(data);
 
-    setTimeout(() => {
-      const decimalData: PowerSystemParamsDecimal = {
-        Vi: new Decimal(data.Vi),
-        Vj: new Decimal(data.Vj),
-        angleVi: new Decimal(data.angleVi),
-        angleVj: new Decimal(data.angleVj),
-        zR: new Decimal(data.zR),
-        zX: new Decimal(data.zX),
-      };
+    const decimalData: PowerSystemParamsDecimal = {
+      Vi: new Decimal(data.Vi),
+      Vj: new Decimal(data.Vj),
+      angleVi: new Decimal(data.angleVi),
+      angleVj: new Decimal(data.angleVj),
+      zR: new Decimal(data.zR),
+      zX: new Decimal(data.zX),
+    };
 
-      const calculatedResults = calculatePowerFlow(decimalData);
-      setResults(calculatedResults);
-      setIsLoading(false);
-      setIsModalOpen(true);
-    }, 1500);
+    const calculatedResults = calculatePowerFlow(decimalData);
+    setResults(calculatedResults);
+    setIsLoading(false);
+    setIsModalOpen(true);
   };
 
-  const tableData: ResultRow[] = React.useMemo(() => {
+  interface TableRowA {
+    parametro1: string;
+    valor1: string;
+    unidade1: string;
+    parametro2: string;
+    valor2: string;
+    unidade2: string;
+    parametro3: string;
+    valor3: string;
+    unidade3: string;
+  }
+
+  const tableData: TableRowA[] = React.useMemo(() => {
     if (!inputData || !results) return [];
 
-    return [
-      {
-        parametro: "Vi",
-        valor: `${inputData.Vi}∠${inputData.angleVi}°`,
-        unidade: "kV",
-      },
-      {
-        parametro: "Vj",
-        valor: `${inputData.Vj}∠${inputData.angleVj}°`,
-        unidade: "kV",
-      },
-      {
-        parametro: "Pij",
-        valor: results.Pij.toDecimalPlaces(10).toString(),
-        unidade: "MW",
-      },
-      {
-        parametro: "Pji",
-        valor: results.Pji.toDecimalPlaces(10).toString(),
-        unidade: "MW",
-      },
-      {
-        parametro: "ΔP",
-        valor: results.deltaP.toDecimalPlaces(10).toString(),
-        unidade: "MW",
-      },
-      {
-        parametro: "Qij",
-        valor: results.Qij.toDecimalPlaces(10).toString(),
-        unidade: "MVAr",
-      },
-      {
-        parametro: "Qji",
-        valor: results.Qji.toDecimalPlaces(10).toString(),
-        unidade: "MVAr",
-      },
-      {
-        parametro: "ΔQ",
-        valor: results.deltaQ.toDecimalPlaces(10).toString(),
-        unidade: "MVAr",
-      },
+    const groups = [
+      [
+        {
+          parametro: "Pij",
+          valor: results.Pij.toDecimalPlaces(10).toString(),
+          unidade: "MW",
+        },
+        {
+          parametro: "Pji",
+          valor: results.Pji.toDecimalPlaces(10).toString(),
+          unidade: "MW",
+        },
+        {
+          parametro: "ΔP",
+          valor: results.deltaP.toDecimalPlaces(10).toString(),
+          unidade: "MW",
+        },
+      ],
+      [
+        {
+          parametro: "Qij",
+          valor: results.Qij.toDecimalPlaces(10).toString(),
+          unidade: "MVAr",
+        },
+        {
+          parametro: "Qji",
+          valor: results.Qji.toDecimalPlaces(10).toString(),
+          unidade: "MVAr",
+        },
+        {
+          parametro: "ΔQ",
+          valor: results.deltaQ.toDecimalPlaces(10).toString(),
+          unidade: "MVAr",
+        },
+      ],
     ];
+
+    const rows: TableRowA[] = [];
+
+    for (const group of groups) {
+      const item1 = group[0] || { parametro: "", valor: "", unidade: "" };
+      const item2 = group[1] || { parametro: "", valor: "", unidade: "" };
+      const item3 = group[2] || { parametro: "", valor: "", unidade: "" };
+
+      rows.push({
+        parametro1: item1.parametro,
+        valor1: item1.valor,
+        unidade1: item1.unidade,
+        parametro2: item2.parametro,
+        valor2: item2.valor,
+        unidade2: item2.unidade,
+        parametro3: item3.parametro,
+        valor3: item3.valor,
+        unidade3: item3.unidade,
+      });
+    }
+
+    return rows;
   }, [inputData, results]);
 
   const tableColumns = [
     {
-      key: "parametro" as keyof ResultRow,
+      key: "parametro1" as keyof TableRowA,
       title: "Parâmetro",
       width: "auto",
       align: "center" as const,
       sortable: false,
       searchable: false,
       render: (value: any) => (
-        <span className="font-semibold">{String(value)}</span>
+        <span className="font-semibold">{String(value) || ""}</span>
       ),
     },
     {
-      key: "valor" as keyof ResultRow,
+      key: "valor1" as keyof TableRowA,
       title: "Valor",
       width: "auto",
       align: "center" as const,
       sortable: false,
       searchable: false,
-      render: (value: any, row: ResultRow) => (
-        <span
-          className={
-            row.parametro === "ΔP" || row.parametro === "ΔQ" ? "font-bold" : ""
-          }
-        >
-          {String(value)}
+      render: (value: any, row: TableRowA) => (
+        <span className={row.parametro1.startsWith("Δ") ? "font-bold" : ""}>
+          {String(value) || ""}
         </span>
       ),
     },
     {
-      key: "unidade" as keyof ResultRow,
+      key: "unidade1" as keyof TableRowA,
       title: "Unidade",
       width: "auto",
       align: "center" as const,
       sortable: false,
       searchable: false,
       render: (value: any) => (
-        <span className="text-muted-foreground">{String(value)}</span>
+        <span className="text-muted-foreground">{String(value) || ""}</span>
+      ),
+    },
+    {
+      key: "parametro2" as keyof TableRowA,
+      title: "Parâmetro",
+      width: "auto",
+      align: "center" as const,
+      sortable: false,
+      searchable: false,
+      render: (value: any) => (
+        <span className="font-semibold">{String(value) || ""}</span>
+      ),
+    },
+    {
+      key: "valor2" as keyof TableRowA,
+      title: "Valor",
+      width: "auto",
+      align: "center" as const,
+      sortable: false,
+      searchable: false,
+      render: (value: any, row: TableRowA) => (
+        <span className={row.parametro2.startsWith("Δ") ? "font-bold" : ""}>
+          {String(value) || ""}
+        </span>
+      ),
+    },
+    {
+      key: "unidade2" as keyof TableRowA,
+      title: "Unidade",
+      width: "auto",
+      align: "center" as const,
+      sortable: false,
+      searchable: false,
+      render: (value: any) => (
+        <span className="text-muted-foreground">{String(value) || ""}</span>
+      ),
+    },
+    {
+      key: "parametro3" as keyof TableRowA,
+      title: "Parâmetro",
+      width: "auto",
+      align: "center" as const,
+      sortable: false,
+      searchable: false,
+      render: (value: any) => (
+        <span className="font-semibold">{String(value) || ""}</span>
+      ),
+    },
+    {
+      key: "valor3" as keyof TableRowA,
+      title: "Valor",
+      width: "auto",
+      align: "center" as const,
+      sortable: false,
+      searchable: false,
+      render: (value: any, row: TableRowA) => (
+        <span className={row.parametro3.startsWith("Δ") ? "font-bold" : ""}>
+          {String(value) || ""}
+        </span>
+      ),
+    },
+    {
+      key: "unidade3" as keyof TableRowA,
+      title: "Unidade",
+      width: "auto",
+      align: "center" as const,
+      sortable: false,
+      searchable: false,
+      render: (value: any) => (
+        <span className="text-muted-foreground">{String(value) || ""}</span>
       ),
     },
   ];
@@ -425,7 +517,7 @@ export const PowerSystemDiagramA: React.FC<PowerSystemDiagramAProps> = ({
           <Card.Content className="p-2 h-fit flex flex-col overflow-hidden">
             <div className="w-full h-full overflow-hidden">
               <svg
-                viewBox="50 50 700 300"
+                viewBox="50 0 700 300"
                 className="w-full h-full"
                 preserveAspectRatio="xMidYMid meet"
                 xmlns="http://www.w3.org/2000/svg"
@@ -691,7 +783,7 @@ export const PowerSystemDiagramA: React.FC<PowerSystemDiagramAProps> = ({
                   Vj = {params.Vj}∠{params.angleVj}° kV
                 </text>
 
-                <g transform="translate(400, 150)">
+                <g transform="translate(400, 120)">
                   <PhasorPair
                     angleA={params.angleVi}
                     angleB={params.angleVj}
@@ -714,7 +806,7 @@ export const PowerSystemDiagramA: React.FC<PowerSystemDiagramAProps> = ({
         isOpen={isModalOpen}
         setIsOpen={setIsModalOpen}
         onClose={() => setIsModalOpen(false)}
-        className="max-w-4xl w-[90vw] max-h-[90vh] overflow-y-auto"
+        className="max-w-7xl w-[95vw] max-h-[95vh] overflow-y-auto"
       >
         <Modal.Header>
           <h2 className="text-xl font-semibold">Resultados do Cálculo</h2>
@@ -723,11 +815,23 @@ export const PowerSystemDiagramA: React.FC<PowerSystemDiagramAProps> = ({
           <div className="space-y-4">
             {results && inputData && tableData.length > 0 && (
               <div className="space-y-4">
+                <style
+                  dangerouslySetInnerHTML={{
+                    __html: `
+                    .results-table th:nth-child(3),
+                    .results-table th:nth-child(6),
+                    .results-table td:nth-child(3),
+                    .results-table td:nth-child(6) {
+                      border-right: 1px solid #d1d5db !important;
+                    }
+                  `,
+                  }}
+                />
                 <Table.Root
                   columns={tableColumns}
                   data={tableData}
                   pagination={false}
-                  className="w-full"
+                  className="w-full results-table"
                 >
                   <Table.Header />
                   <Table.Rows />

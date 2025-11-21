@@ -1,7 +1,5 @@
 import Decimal from "decimal.js";
 import { PI } from "@/lib/constants";
-import { getComplexFromPolar } from "../utils";
-import Complex from "complex.js";
 
 export interface PowerSystemParamsDecimalB {
   Vi: Decimal;
@@ -39,11 +37,38 @@ export interface PowerFlowResultsB {
   deltaQjk: Decimal;
 }
 
-export interface ResultRowB {
-  parametro: string;
-  valor: string;
-  unidade: string;
-}
+const cos = (x: Decimal) => new Decimal(Math.cos(x.toNumber()));
+const sin = (x: Decimal) => new Decimal(Math.sin(x.toNumber()));
+
+const activePower = (
+  Vi: Decimal,
+  Vj: Decimal,
+  R: Decimal,
+  X: Decimal,
+  theta: Decimal
+) => {
+  const denom = R.pow(2).plus(X.pow(2));
+
+  return R.times(Vi.pow(2))
+    .minus(R.times(Vi).times(Vj).times(cos(theta)))
+    .plus(X.times(Vi).times(Vj).times(sin(theta)))
+    .dividedBy(denom);
+};
+
+const reactivePower = (
+  Vi: Decimal,
+  Vj: Decimal,
+  R: Decimal,
+  X: Decimal,
+  theta: Decimal
+) => {
+  const denom = R.pow(2).plus(X.pow(2));
+
+  return X.times(Vi.pow(2))
+    .minus(X.times(Vi).times(Vj).times(cos(theta)))
+    .minus(R.times(Vi).times(Vj).times(sin(theta)))
+    .dividedBy(denom);
+};
 
 export const calculatePowerFlowB = (
   data: PowerSystemParamsDecimalB
@@ -63,141 +88,30 @@ export const calculatePowerFlowB = (
     zX_ij,
   } = data;
 
-  const ViDecimal = Vi;
-  const VjDecimal = Vj;
-  const VkDecimal = Vk;
+  const θij = angleVi.minus(angleVj).times(PI).dividedBy(180);
+  const θik = angleVi.minus(angleVk).times(PI).dividedBy(180);
+  const θjk = angleVj.minus(angleVk).times(PI).dividedBy(180);
 
-  const denominatorIk = zR_ik.pow(2).plus(zX_ik.pow(2));
-  const denominatorJk = zR_jk.pow(2).plus(zX_jk.pow(2));
-  const denominatorIj = zR_ij.pow(2).plus(zX_ij.pow(2));
+  const Pij = activePower(Vi, Vj, zR_ij, zX_ij, θij);
+  const Pji = activePower(Vj, Vi, zR_ij, zX_ij, θij.neg());
+  const Pik = activePower(Vi, Vk, zR_ik, zX_ik, θik);
+  const Pki = activePower(Vk, Vi, zR_ik, zX_ik, θik.neg());
+  const Pjk = activePower(Vj, Vk, zR_jk, zX_jk, θjk);
+  const Pkj = activePower(Vk, Vj, zR_jk, zX_jk, θjk.neg());
 
-  const thetaIjRadians = angleVi.minus(angleVj).times(PI).dividedBy(180);
-  const thetaIkRadians = angleVi.minus(angleVk).times(PI).dividedBy(180);
-  const thetaJkRadians = angleVj.minus(angleVk).times(PI).dividedBy(180);
+  const Qij = reactivePower(Vi, Vj, zR_ij, zX_ij, θij);
+  const Qji = reactivePower(Vj, Vi, zR_ij, zX_ij, θij.neg());
+  const Qik = reactivePower(Vi, Vk, zR_ik, zX_ik, θik);
+  const Qki = reactivePower(Vk, Vi, zR_ik, zX_ik, θik.neg());
+  const Qjk = reactivePower(Vj, Vk, zR_jk, zX_jk, θjk);
+  const Qkj = reactivePower(Vk, Vj, zR_jk, zX_jk, θjk.neg());
 
-  const cosThetaIj = new Decimal(Math.cos(thetaIjRadians.toNumber()));
-  const sinThetaIj = new Decimal(Math.sin(thetaIjRadians.toNumber()));
-
-  const cosThetaIk = new Decimal(Math.cos(thetaIkRadians.toNumber()));
-  const sinThetaIk = new Decimal(Math.sin(thetaIkRadians.toNumber()));
-
-  const cosThetaJk = new Decimal(Math.cos(thetaJkRadians.toNumber()));
-  const sinThetaJk = new Decimal(Math.sin(thetaJkRadians.toNumber()));
-
-  const Pij = new Decimal(1)
-    .dividedBy(denominatorIj)
-    .times(
-      zR_ij
-        .times(ViDecimal.pow(2))
-        .minus(zR_ij.times(ViDecimal).times(VjDecimal).times(cosThetaIj))
-        .plus(zX_ij.times(ViDecimal).times(VjDecimal).times(sinThetaIj))
-    );
-
-  const Pji = new Decimal(1)
-    .dividedBy(denominatorIj)
-    .times(
-      zR_ij
-        .times(VjDecimal.pow(2))
-        .minus(zR_ij.times(ViDecimal).times(VjDecimal).times(cosThetaIj))
-        .minus(zX_ij.times(ViDecimal).times(VjDecimal).times(sinThetaIj))
-    );
-
-  const Pik = new Decimal(1)
-    .dividedBy(denominatorIk)
-    .times(
-      zR_ik
-        .times(ViDecimal.pow(2))
-        .minus(zR_ik.times(ViDecimal).times(VkDecimal).times(cosThetaIk))
-        .plus(zX_ik.times(ViDecimal).times(VkDecimal).times(sinThetaIk))
-    );
-
-  const Pki = new Decimal(1)
-    .dividedBy(denominatorIk)
-    .times(
-      zR_ik
-        .times(VkDecimal.pow(2))
-        .minus(zR_ik.times(ViDecimal).times(VkDecimal).times(cosThetaIk))
-        .minus(zX_ik.times(ViDecimal).times(VkDecimal).times(sinThetaIk))
-    );
-
-  const Pjk = new Decimal(1)
-    .dividedBy(denominatorJk)
-    .times(
-      zR_jk
-        .times(VjDecimal.pow(2))
-        .minus(zR_jk.times(VjDecimal).times(VkDecimal).times(cosThetaJk))
-        .plus(zX_jk.times(VjDecimal).times(VkDecimal).times(sinThetaJk))
-    );
-
-  const Pkj = new Decimal(1)
-    .dividedBy(denominatorJk)
-    .times(
-      zR_jk
-        .times(VkDecimal.pow(2))
-        .minus(zR_jk.times(VjDecimal).times(VkDecimal).times(cosThetaJk))
-        .minus(zX_jk.times(VjDecimal).times(VkDecimal).times(sinThetaJk))
-    );
-
-  const Qij = new Decimal(1)
-    .dividedBy(denominatorIj)
-    .times(
-      zX_ij
-        .times(ViDecimal.pow(2))
-        .minus(zX_ij.times(ViDecimal).times(VjDecimal).times(cosThetaIj))
-        .minus(zR_ij.times(ViDecimal).times(VjDecimal).times(sinThetaIj))
-    );
-
-  const Qji = new Decimal(1)
-    .dividedBy(denominatorIj)
-    .times(
-      zX_ij
-        .times(VjDecimal.pow(2))
-        .minus(zX_ij.times(ViDecimal).times(VjDecimal).times(cosThetaIj))
-        .plus(zR_ij.times(ViDecimal).times(VjDecimal).times(sinThetaIj))
-    );
-
-  const Qik = new Decimal(1)
-    .dividedBy(denominatorIk)
-    .times(
-      zX_ik
-        .times(ViDecimal.pow(2))
-        .minus(zX_ik.times(ViDecimal).times(VkDecimal).times(cosThetaIk))
-        .minus(zR_ik.times(ViDecimal).times(VkDecimal).times(sinThetaIk))
-    );
-
-  const Qki = new Decimal(1)
-    .dividedBy(denominatorIk)
-    .times(
-      zX_ik
-        .times(VkDecimal.pow(2))
-        .minus(zX_ik.times(ViDecimal).times(VkDecimal).times(cosThetaIk))
-        .plus(zR_ik.times(ViDecimal).times(VkDecimal).times(sinThetaIk))
-    );
-
-  const Qjk = new Decimal(1)
-    .dividedBy(denominatorJk)
-    .times(
-      zX_jk
-        .times(VjDecimal.pow(2))
-        .minus(zX_jk.times(VjDecimal).times(VkDecimal).times(cosThetaJk))
-        .minus(zR_jk.times(VjDecimal).times(VkDecimal).times(sinThetaJk))
-    );
-
-  const Qkj = new Decimal(1)
-    .dividedBy(denominatorJk)
-    .times(
-      zX_jk
-        .times(VkDecimal.pow(2))
-        .minus(zX_jk.times(VjDecimal).times(VkDecimal).times(cosThetaJk))
-        .plus(zR_jk.times(VjDecimal).times(VkDecimal).times(sinThetaJk))
-    );
-
-  const deltaPij = Pij.plus(Pji);
-  const deltaPik = Pik.plus(Pki);
-  const deltaPjk = Pjk.plus(Pkj);
-  const deltaQij = Qij.plus(Qji);
-  const deltaQik = Qik.plus(Qki);
-  const deltaQjk = Qjk.plus(Qkj);
+  const deltaPij = Pij.abs().minus(Pji.abs()).abs();
+  const deltaPik = Pik.abs().minus(Pki.abs()).abs();
+  const deltaPjk = Pjk.abs().minus(Pkj.abs()).abs();
+  const deltaQij = Qij.abs().minus(Qji.abs()).abs();
+  const deltaQik = Qik.abs().minus(Qki.abs()).abs();
+  const deltaQjk = Qjk.abs().minus(Qkj.abs()).abs();
 
   return {
     Pij,

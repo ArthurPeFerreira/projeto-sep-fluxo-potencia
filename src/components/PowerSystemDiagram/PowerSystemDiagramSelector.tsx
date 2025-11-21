@@ -40,8 +40,12 @@ export const PowerSystemDiagramSelector: React.FC<
             angleVk: 10,
             Vn: 345,
             L: 80,
-            zR: 10,
-            zX: 5,
+            zR_ik: 5,
+            zX_ik: 40,
+            zR_jk: 5,
+            zX_jk: 40,
+            zR_ij: 5,
+            zX_ij: 40,
           }}
         />
       )}

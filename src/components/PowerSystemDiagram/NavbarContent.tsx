@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/Switch";
 import { DropdownMenu } from "@/components/ui/DropdownMenu";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 
 const parseMathExpression = (input: string): number | null => {
   if (!input || input.trim() === "") return null;
@@ -134,6 +134,11 @@ export const NavbarContent: React.FC = () => {
   const [radiansInput, setRadiansInput] = useState<string>("");
   const [degreesInput, setDegreesInput] = useState<string>("");
   const updatingRef = useRef(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const radiansValue = useMemo(
     () => parseMathExpression(radiansInput),
@@ -214,96 +219,97 @@ export const NavbarContent: React.FC = () => {
       <h1 className="text-lg font-semibold">Projeto SEP - Fluxo de Potência</h1>
       <div className="flex items-center gap-4">
         <NavbarDiagramSelector />
-        {selectedDiagram === "A" && (
-          <div className="flex flex-col items-center gap-2">
-            <span className="text-sm font-medium">Formato da Impedância:</span>
-            <div className="flex items-center gap-2">
-              <span
-                className={`text-xs ${
-                  impedanceFormat === "rectangular" ? "font-semibold" : ""
-                }`}
-              >
-                Retangular
-              </span>
-              <Switch
-                checked={impedanceFormat === "polar"}
-                onCheckedChange={(checked) =>
-                  setImpedanceFormat(checked ? "polar" : "rectangular")
-                }
-              />
-              <span
-                className={`text-xs ${
-                  impedanceFormat === "polar" ? "font-semibold" : ""
-                }`}
-              >
-                Polar
-              </span>
-            </div>
+        <div className="flex flex-col items-center gap-2">
+          <span className="text-sm font-medium">Formato da Impedância:</span>
+          <div className="flex items-center gap-2">
+            <span
+              className={`text-xs ${
+                impedanceFormat === "rectangular" ? "font-semibold" : ""
+              }`}
+            >
+              Retangular
+            </span>
+            <Switch
+              id="impedance-format-switch"
+              checked={impedanceFormat === "polar"}
+              onCheckedChange={(checked) =>
+                setImpedanceFormat(checked ? "polar" : "rectangular")
+              }
+            />
+            <span
+              className={`text-xs ${
+                impedanceFormat === "polar" ? "font-semibold" : ""
+              }`}
+            >
+              Polar
+            </span>
           </div>
+        </div>
+        {isMounted && (
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger asChild>
+              <Button variant="outline" size="sm">
+                Conversor Rad ↔ Graus
+              </Button>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Content className="w-96 p-4">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-semibold mb-1">
+                    Conversor de Ângulos
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Aceita expressões como: 2π, π/2, 2√3π, 45.
+                  </p>
+                </div>
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Input
+                      type="text"
+                      title="Radianos (rad)"
+                      value={radiansInput}
+                      onChange={handleRadiansInputChange}
+                      placeholder="Ex: 2π, π/2, 1.5"
+                      showButtons={false}
+                    />
+                    {radiansValue !== null && (
+                      <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
+                        <span>≈ {radiansValue.toFixed(6)} rad</span>
+                        {radiansExpression &&
+                          radiansExpression !==
+                            radiansValue.toFixed(6).replace(/\.?0+$/, "") &&
+                          parseMathExpression(radiansExpression) !== null &&
+                          Math.abs(
+                            (parseMathExpression(radiansExpression) || 0) -
+                              radiansValue
+                          ) < 1e-10 && (
+                            <span className="text-primary font-medium">
+                              = {radiansExpression}
+                            </span>
+                          )}
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Input
+                      type="text"
+                      title="Graus (°)"
+                      value={degreesInput}
+                      onChange={handleDegreesInputChange}
+                      placeholder="Ex: 90, 180, 45"
+                      showButtons={false}
+                    />
+                    {degreesExpression && degreesValue !== null && (
+                      <div className="text-xs text-muted-foreground">
+                        ≈ {degreesValue.toFixed(6)}°
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </DropdownMenu.Content>
+          </DropdownMenu.Root>
         )}
-        <DropdownMenu.Root>
-          <DropdownMenu.Trigger asChild>
-            <Button variant="outline" size="sm">
-              Conversor Rad ↔ Graus
-            </Button>
-          </DropdownMenu.Trigger>
-          <DropdownMenu.Content className="w-96 p-4">
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-sm font-semibold mb-1">
-                  Conversor de Ângulos
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  Aceita expressões como: 2π, π/2, 2√3π, 45.
-                </p>
-              </div>
-              <div className="space-y-3">
-                <div className="space-y-2">
-                  <Input
-                    type="text"
-                    title="Radianos (rad)"
-                    value={radiansInput}
-                    onChange={handleRadiansInputChange}
-                    placeholder="Ex: 2π, π/2, 1.5"
-                    showButtons={false}
-                  />
-                  {radiansValue !== null && (
-                    <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
-                      <span>≈ {radiansValue.toFixed(6)} rad</span>
-                      {radiansExpression &&
-                        radiansExpression !==
-                          radiansValue.toFixed(6).replace(/\.?0+$/, "") &&
-                        parseMathExpression(radiansExpression) !== null &&
-                        Math.abs(
-                          (parseMathExpression(radiansExpression) || 0) -
-                            radiansValue
-                        ) < 1e-10 && (
-                          <span className="text-primary font-medium">
-                            = {radiansExpression}
-                          </span>
-                        )}
-                    </div>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Input
-                    type="text"
-                    title="Graus (°)"
-                    value={degreesInput}
-                    onChange={handleDegreesInputChange}
-                    placeholder="Ex: 90, 180, 45"
-                    showButtons={false}
-                  />
-                  {degreesExpression && degreesValue !== null && (
-                    <div className="text-xs text-muted-foreground">
-                      ≈ {degreesValue.toFixed(6)}°
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </DropdownMenu.Content>
-        </DropdownMenu.Root>
       </div>
       <h1 className="text-lg font-semibold">Arthur Pedro Ferreira</h1>
     </div>
