@@ -76,8 +76,8 @@ export const calculatePowerFlow = (
         .plus(R.times(ViDecimal).times(VjDecimal).times(sinTheta))
     );
 
-  const deltaP = Pij.plus(Pji);
-  const deltaQ = Qij.plus(Qji);
+  const deltaP = Pij.abs().minus(Pji.abs()).abs();
+  const deltaQ = Qij.abs().minus(Qji.abs()).abs();
 
   return {
     Pij,
